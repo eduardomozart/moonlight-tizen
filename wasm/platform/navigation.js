@@ -227,7 +227,7 @@ const Views = {
     up: function() {
       // If there are more rows behind, then go to the previous row
       if (this.view.prevCardRow(5)) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       } else {
         // If there are no more rows, navigate to the HostsNav view
         Navigation.change(Views.HostsNav);
@@ -241,16 +241,16 @@ const Views = {
     down: function() {
       // If there are more rows after, then go to the next row
       if (this.view.nextCardRow(5)) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       }
     },
     left: function() {
       this.view.prevCard(5);
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     right: function() {
       this.view.nextCard(5);
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     select: function() {
       const currentItem = this.view.current();
@@ -311,7 +311,7 @@ const Views = {
       // Navigate to the Hosts view
       Navigation.change(Views.Hosts);
       // Set focus on the first navigation item in Hosts view when transitioning from HostsNav view
-      const navItem = document.getElementById(Views.Hosts.view.current());
+      const navItem = Views.Hosts.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -325,7 +325,7 @@ const Views = {
       document.getElementById(this.view.current()).focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -396,7 +396,7 @@ const Views = {
       }
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -437,7 +437,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -470,7 +470,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -505,7 +505,7 @@ const Views = {
       document.getElementById('cancelDeleteHost').focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -535,7 +535,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -567,7 +567,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -589,7 +589,7 @@ const Views = {
     up: function() {
       // If there are more categories behind, then go to the previous category
       if (this.view.prevCategory()) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       } else {
         // If there are no more categories, navigate to the SettingsNav view
         Navigation.change(Views.SettingsNav);
@@ -603,7 +603,7 @@ const Views = {
     down: function() {
       // If there are more categories after, then go to the next category
       if (this.view.nextCategory()) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       }
     },
     left: function() {},
@@ -641,7 +641,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the first navigation item in Settings view when transitioning from SettingsNav view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -656,13 +656,13 @@ const Views = {
     },
     select: function() {
       const currentItem = this.view.current();
-      if (currentItem.id === 'goBackBtn') {
-        currentItem.click();
+      if (currentItem === 'goBackBtn') {
+        document.getElementById(currentItem).click();
         // Navigate to the HostsNav view
         Navigation.change(Views.HostsNav);
         document.getElementById('settingsBtn').focus();
       } else {
-        this.view.current().click();
+        document.getElementById(this.view.current()).click();
       }
     },
     accept: function() {
@@ -711,7 +711,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -724,7 +724,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from BasicSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -747,11 +747,11 @@ const Views = {
       .parentNode.children[3].children[1].children),
     up: function() {
       this.view.prevOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     down: function() {
       this.view.nextOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     left: function() {},
     right: function() {},
@@ -784,11 +784,11 @@ const Views = {
       .parentNode.children[3].children[1].children),
     up: function() {
       this.view.prevOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     down: function() {
       this.view.nextOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     left: function() {},
     right: function() {},
@@ -868,7 +868,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -881,7 +881,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from HostSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -915,7 +915,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -928,7 +928,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from InputSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -961,7 +961,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -974,7 +974,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from AudioSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -997,11 +997,11 @@ const Views = {
       .parentNode.children[3].children[1].children),
     up: function() {
       this.view.prevOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     down: function() {
       this.view.nextOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     left: function() {},
     right: function() {},
@@ -1045,7 +1045,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1058,7 +1058,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from VideoSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -1081,11 +1081,11 @@ const Views = {
       .parentNode.children[3].children[1].children),
     up: function() {
       this.view.prevOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     down: function() {
       this.view.nextOption();
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     left: function() {},
     right: function() {},
@@ -1128,7 +1128,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1141,7 +1141,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from AdvancedSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -1175,7 +1175,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1188,7 +1188,7 @@ const Views = {
       // Navigate to the Settings view
       Navigation.change(Views.Settings);
       // Set focus on the category item in Settings view when transitioning from AboutSettings view
-      const navItem = document.getElementById(Views.Settings.view.current());
+      const navItem = Views.Settings.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -1217,7 +1217,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1247,7 +1247,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1282,7 +1282,7 @@ const Views = {
       document.getElementById('cancelRestoreDefaults').focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1304,7 +1304,7 @@ const Views = {
     up: function() {
       // If there are more rows behind, then go to the previous row
       if (this.view.prevCardRow(6)) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       } else {
         // If there are no more rows, navigate to the AppsNav view
         Navigation.change(Views.AppsNav);
@@ -1318,16 +1318,16 @@ const Views = {
     down: function() {
       // If there are more rows after, then go to the next row
       if (this.view.nextCardRow(6)) {
-        document.getElementById(this.view.current()).focus();
+        this.view.current().focus();
       }
     },
     left: function() {
       this.view.prevCard(6);
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     right: function() {
       this.view.nextCard(6);
-      document.getElementById(this.view.current()).focus();
+      this.view.current().focus();
     },
     select: function() {
       this.view.current().click();
@@ -1359,7 +1359,7 @@ const Views = {
       // Navigate to the Apps view
       Navigation.change(Views.Apps);
       // Set focus on the first navigation item in Apps view when transitioning from AppsNav view
-      const navItem = document.getElementById(Views.Apps.view.current());
+      const navItem = Views.Apps.view.current();
       if (navItem) {
         navItem.focus();
       }
@@ -1373,7 +1373,7 @@ const Views = {
       document.getElementById(this.view.current()).focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1408,7 +1408,7 @@ const Views = {
       document.getElementById('cancelQuitApp').focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1438,7 +1438,7 @@ const Views = {
     left: function() {},
     right: function() {},
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1471,7 +1471,7 @@ const Views = {
       document.getElementById('cancelRestartApp').focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
@@ -1504,7 +1504,7 @@ const Views = {
       document.getElementById('cancelExitApp').focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
       document.getElementById(this.view.current()).click();
