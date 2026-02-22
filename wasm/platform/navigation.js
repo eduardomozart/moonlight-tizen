@@ -227,7 +227,7 @@ const Views = {
     up: function() {
       // If there are more rows behind, then go to the previous row
       if (this.view.prevCardRow(5)) {
-        this.view.current().focus();
+        document.getElementById(this.view.current()).focus();
       } else {
         // If there are no more rows, navigate to the HostsNav view
         Navigation.change(Views.HostsNav);
@@ -241,16 +241,16 @@ const Views = {
     down: function() {
       // If there are more rows after, then go to the next row
       if (this.view.nextCardRow(5)) {
-        this.view.current().focus();
+        document.getElementById(this.view.current()).focus();
       }
     },
     left: function() {
       this.view.prevCard(5);
-      this.view.current().focus();
+      document.getElementById(this.view.current()).focus();
     },
     right: function() {
       this.view.nextCard(5);
-      this.view.current().focus();
+      document.getElementById(this.view.current()).focus();
     },
     select: function() {
       const currentItem = this.view.current();
@@ -311,7 +311,7 @@ const Views = {
       // Navigate to the Hosts view
       Navigation.change(Views.Hosts);
       // Set focus on the first navigation item in Hosts view when transitioning from HostsNav view
-      const navItem = Views.Hosts.view.current();
+      const navItem = document.getElementById(Views.Hosts.view.current());
       if (navItem) {
         navItem.focus();
       }
@@ -656,24 +656,26 @@ const Views = {
     },
     select: function() {
       const currentItem = this.view.current();
-      if (currentItem === 'goBackBtn') {
+      if (currentItem === 'goBackBtn' || currentItem === 'restoreDefaultsBtn') {
         document.getElementById(currentItem).click();
-        // Navigate to the HostsNav view
-        Navigation.change(Views.HostsNav);
-        document.getElementById('settingsBtn').focus();
+        if (currentItem === 'goBackBtn') {
+          // Navigate to the HostsNav view
+          Navigation.change(Views.HostsNav);
+          document.getElementById('settingsBtn').focus();
+        }
       } else {
         document.getElementById(this.view.current()).click();
       }
     },
     accept: function() {
       const currentItem = document.getElementById(this.view.current());
-      if (currentItem.id === 'goBackBtn') {
+      if (currentItem && currentItem.id === 'goBackBtn') {
         currentItem.click();
         // Navigate to the HostsNav view
         Navigation.change(Views.HostsNav);
         document.getElementById('settingsBtn').focus();
-      } else {
-        document.getElementById(this.view.current()).click();
+      } else if (currentItem) {
+        currentItem.click();
       }
     },
     back: function() {
@@ -1304,7 +1306,7 @@ const Views = {
     up: function() {
       // If there are more rows behind, then go to the previous row
       if (this.view.prevCardRow(6)) {
-        this.view.current().focus();
+        document.getElementById(this.view.current()).focus();
       } else {
         // If there are no more rows, navigate to the AppsNav view
         Navigation.change(Views.AppsNav);
@@ -1318,22 +1320,22 @@ const Views = {
     down: function() {
       // If there are more rows after, then go to the next row
       if (this.view.nextCardRow(6)) {
-        this.view.current().focus();
+        document.getElementById(this.view.current()).focus();
       }
     },
     left: function() {
       this.view.prevCard(6);
-      this.view.current().focus();
+      document.getElementById(this.view.current()).focus();
     },
     right: function() {
       this.view.nextCard(6);
-      this.view.current().focus();
+      document.getElementById(this.view.current()).focus();
     },
     select: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     accept: function() {
-      this.view.current().click();
+      document.getElementById(this.view.current()).click();
     },
     back: function() {
       document.getElementById('goBackBtn').click();
@@ -1359,7 +1361,7 @@ const Views = {
       // Navigate to the Apps view
       Navigation.change(Views.Apps);
       // Set focus on the first navigation item in Apps view when transitioning from AppsNav view
-      const navItem = Views.Apps.view.current();
+      const navItem = document.getElementById(Views.Apps.view.current());
       if (navItem) {
         navItem.focus();
       }
