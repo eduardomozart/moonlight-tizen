@@ -1,7 +1,7 @@
 (function(global) {
   'use strict';
 
-  const LANGUAGE_STORAGE_KEY = 'moonlight.language';
+  const LANGUAGE_SETTING_KEY = 'languagePreference';
   const SOURCE_LOCALE = 'en-US';
   const SUPPORTED_LOCALES = ['en-US', 'pt-BR'];
   const LOCALE_LABELS = {
@@ -95,19 +95,34 @@
   }
 
   function readStoredPreference() {
-    try {
-      return localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'auto';
-    } catch (error) {
-      console.warn('[i18n.js] Failed to read language preference:', error);
-      return 'auto';
-    }
+    return new Promise((resolve) => {
+      if (typeof window.getData === 'function') {
+        try {
+          window.getData(LANGUAGE_SETTING_KEY, (savedValue) => {
+            const storedPreference = savedValue && typeof savedValue[LANGUAGE_SETTING_KEY] === 'string'
+              ? savedValue[LANGUAGE_SETTING_KEY]
+              : '';
+            if (storedPreference) {
+              resolve(storedPreference);
+              return;
+            }
+          });
+          return;
+        } catch (error) {
+          console.warn('[i18n.js] Failed to read language preference from settings store:', error);
+        }
+      }
+    });
   }
 
   function writeStoredPreference(preference) {
-    try {
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, preference || 'auto');
-    } catch (error) {
-      console.warn('[i18n.js] Failed to persist language preference:', error);
+    const value = preference || 'auto';
+    if (typeof window.storeData === 'function') {
+      try {
+        window.storeData(LANGUAGE_SETTING_KEY, value, null);
+      } catch (error) {
+        console.warn('[i18n.js] Failed to persist language preference in settings store:', error);
+      }
     }
   }
 
@@ -125,12 +140,6 @@
   }
 
   function updateLocalizedSelections() {
-    const selectLanguage = document.getElementById('selectLanguage');
-    if (selectLanguage) {
-      const value = selectLanguage.getAttribute('data-value') || state.localePreference || 'auto';
-      selectLanguage.textContent = LOCALE_LABELS[value] || LOCALE_LABELS.auto;
-    }
-
     const selectResolution = document.getElementById('selectResolution');
     if (selectResolution) {
       const selectedItem = document.querySelector(`.videoResolutionMenu li[data-value="${selectResolution.dataset.value}"]`);
@@ -222,16 +231,18 @@
       return Promise.resolve(state.effectiveLocale);
     }
 
-    state.localePreference = readStoredPreference();
-    return loadLocaleFile(SOURCE_LOCALE).then((sourceDict) => {
-      state.sourceDictionary = sourceDict || {};
-      state.initialized = true;
-      return setLanguage(state.localePreference);
-    }).catch((error) => {
-      console.error('[i18n.js] Failed to load source locale file.', error);
-      state.sourceDictionary = {};
-      state.initialized = true;
-      return setLanguage(state.localePreference);
+    return readStoredPreference().then((storedPreference) => {
+      state.localePreference = storedPreference || 'auto';
+      return loadLocaleFile(SOURCE_LOCALE).then((sourceDict) => {
+        state.sourceDictionary = sourceDict || {};
+        state.initialized = true;
+        return setLanguage(state.localePreference);
+      }).catch((error) => {
+        console.error('[i18n.js] Failed to load source locale file.', error);
+        state.sourceDictionary = {};
+        state.initialized = true;
+        return setLanguage(state.localePreference);
+      });
     });
   }
 

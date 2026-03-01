@@ -591,7 +591,7 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
 
   if (!pairingCert) {
     console.warn('%c[index.js, pairingDialog]', 'color: green;', 'Warning: Pairing certificate is not generated yet. Please ensure Wasm is initialized properly!');
-    snackbarLogLong('Something went wrong with the pairing certificate. Please try pairing with the host PC again.');
+    snackbarLogLong(t('Something went wrong with the pairing certificate. Please try pairing with the host PC again.'));
     onFailure();
     return;
   }
@@ -1396,7 +1396,7 @@ function updateAppButton(latestVersion) {
       }, 500);
     }).catch(error => {
       console.error('%c[index.js, updateAppButton]', 'color: green;', 'Error: Failed to fetch the release data!', error);
-      snackbarLogLong('Unable to check update release notes at this time. Please try again later!');
+      snackbarLogLong(t('Unable to check update release notes at this time. Please try again later!'));
     });
   });
 }
@@ -1489,12 +1489,12 @@ function checkForAppUpdates() {
         updateAppDialog(latestVersion, releaseNotes);
       } else {
         // Otherwise, show a snackbar message to inform the user that the app is already up to date
-        snackbarLogLong(`✅ Your app is already up to date! You're on the latest version.`);
+        snackbarLogLong(t('✅ Your app is already up to date! You\'re on the latest version.'));
       }
     }, 1500);
   }).catch(error => {
     console.error('%c[index.js, checkForAppUpdates]', 'color: green;', 'Error: Failed to fetch the release data!', error);
-    snackbarLogLong('Unable to check for updates right now. Please try again later!');
+    snackbarLogLong(t('Unable to check for updates right now. Please try again later!'));
   });
 }
 
@@ -1528,7 +1528,7 @@ function checkForAppUpdatesAtStartup() {
         }, 100);
       }).catch(error => {
         console.error('%c[index.js, checkForAppUpdatesAtStartup]', 'color: green;', 'Error: Failed to fetch the release data!', error);
-        snackbarLogLong('Cannot automatically check for updates at this time!');
+        snackbarLogLong(t('Cannot automatically check for updates at this time!'));
       });
 
       // Save the current time
@@ -1629,7 +1629,7 @@ function restartAppDialog() {
   var restartAppDialog = document.querySelector('#restartAppDialog');
 
   // Change the dialog text element to confirm whether the user wants to restart the application
-  document.getElementById('restartAppDialogText').innerHTML = 'Are you sure you want to restart Moonlight?';
+  document.getElementById('restartAppDialogText').innerHTML = t('Are you sure you want to restart Moonlight?');
 
   // Show the dialog and push the view
   restartAppDialogOverlay.style.display = 'flex';
@@ -1667,8 +1667,8 @@ function requiredRestartAppDialog() {
   var restartAppDialog = document.querySelector('#restartAppDialog');
 
   // Change the dialog text element to inform the user that a restart is required
-  document.getElementById('restartAppDialogText').innerHTML = 'In order for your changes to take effect, a restart of the application is required.'
-  + '<br><br>' + 'Would you like to proceed with the restart?';
+  document.getElementById('restartAppDialogText').innerHTML = t('In order for your changes to take effect, a restart of the application is required.'
+  + '<br><br>' + 'Would you like to proceed with the restart?');
 
   // Show the dialog and push the view
   restartAppDialogOverlay.style.display = 'flex';
@@ -1868,7 +1868,7 @@ function showApps(host) {
         var emptyAppListImg = new Image();
         emptyAppListImg.src = 'static/res/applist_empty.svg';
         $('#game-grid').html(emptyAppListImg);
-        snackbarLogLong('Your list is currently empty. Please add your favorite apps to the list.');
+        snackbarLogLong(t('Your list is currently empty. Please add your favorite apps to the list.'));
         return;
       }
 
@@ -1972,7 +1972,7 @@ function showApps(host) {
       var errorAppListImg = new Image();
       errorAppListImg.src = 'static/res/applist_error.svg';
       $('#game-grid').html(errorAppListImg);
-      snackbarLogLong('Unable to retrieve your list of apps at this time. Please refresh the list of apps or try again later!');
+      snackbarLogLong(t('Unable to retrieve your list of apps at this time. Please refresh the list of apps or try again later!'));
     });
 
     // Navigate to the Apps view
@@ -1993,7 +1993,7 @@ function quitAppDialog() {
       var quitAppDialog = document.querySelector('#quitAppDialog');
 
       // Change the dialog text element to include the game title
-      document.getElementById('quitAppDialogText').innerHTML = 'Are you sure you want to quit ' + currentGame.title + '? All unsaved data will be lost.';
+      document.getElementById('quitAppDialogText').innerHTML = t('Are you sure you want to quit %1$s? All unsaved data will be lost.', currentGame.title);
       
       // Show the dialog and push the view
       quitAppOverlay.style.display = 'flex';
@@ -2092,7 +2092,7 @@ function startGame(host, appID) {
           var quitAppDialog = document.querySelector('#quitAppDialog');
 
           // Change the dialog text element to include the game title
-          document.getElementById('quitAppDialogText').innerHTML = currentApp.title + ' is already running. Would you like to quit it and start ' + appToStart.title + '?';
+          document.getElementById('quitAppDialogText').innerHTML = t('%1$s is already running. Would you like to quit it and start %2$s?', currentApp.title, appToStart.title);
 
           // Show the dialog and push the view
           quitAppOverlay.style.display = 'flex';
@@ -2529,7 +2529,7 @@ function warnResolutionFramerate() {
   // Video resolution and frame rate warning
   if (!resFpsWarning && chosenResolutionWidth > '1920' && chosenResolutionHeight > '1080' && chosenFramerate > '60') {
     // Warn only if video resolution is greater than 1080p and frame rate is greater than 60 FPS
-    snackbarLogLong('Warning: This resolution and frame rate may not perform well on lower-end devices or slower connections!');
+    snackbarLogLong(t('Warning: This resolution and frame rate may not perform well on lower-end devices or slower connections!'));
     // Set flag for video resolution and frame rate warning
     resFpsWarning = true;
   } else if (resFpsWarning && (chosenResolutionWidth <= '1920' || chosenResolutionHeight <= '1080' || chosenFramerate <= '60')) {
@@ -2554,7 +2554,7 @@ function warnBitrate() {
   // Video bitrate warning
   if (!bitrateWarning && chosenBitrate > 100) {
     // Warn only if video bitrate is greater than 100 Mbps
-    snackbarLogLong('Warning: Higher bitrate may cause playback interruptions and performance issues, please try with caution!');
+    snackbarLogLong(t('Warning: Higher bitrate may cause playback interruptions and performance issues, please try with caution!'));
     // Set flag for video bitrate warning
     bitrateWarning = true;
   } else if (bitrateWarning && chosenBitrate <= 100) {
@@ -2717,7 +2717,7 @@ function warnAudioConfiguration() {
   // Audio configuration warning
   if (!audioWarning && (chosenAudioConfig === '71Surround' || chosenAudioConfig === '51Surround')) {
     // Warn only if audio configuration is selected to 5.1 or 7.1 Surround
-    snackbarLogLong('Warning: 5.1 or 7.1 Surround sound may not be supported by your host PC and may increase audio latency!');
+    snackbarLogLong(t('Warning: 5.1 or 7.1 Surround sound may not be supported by your host PC and may increase audio latency!'));
     // Set flag for audio configuration warning
     audioWarning = true;
   } else if (audioWarning && (chosenAudioConfig === 'Stereo')) {
@@ -2776,7 +2776,7 @@ function warnVideoCodec() {
   // Video codec warning
   if (!codecWarning && (chosenVideoCodec === 'AV1')) {
     // Warn only if video codec is selected to AV1
-    snackbarLogLong('Warning: Selected codec may not be supported by your host PC and may significantly slow down performance!');
+    snackbarLogLong(t('Warning: Selected codec may not be supported by your host PC and may significantly slow down performance!'));
     // Set flag for video codec warning
     codecWarning = true;
   } else if (codecWarning && (chosenVideoCodec === 'HEVC' || chosenVideoCodec === 'H264')) {
@@ -2795,7 +2795,7 @@ function saveHdrMode() {
     // Handle HDR mode switch based on the selected codec
     if (selectedVideoCodec === chosenH264Codec) { // H.264
       // H.264 does not support HDR profile, so stay on H.264 codec
-      snackbarLog('H.264 codec does not support the HDR profile.');
+      snackbarLog(t('H.264 codec does not support the HDR profile.'));
       // Turn off the HDR mode switch and save the state
       $('#hdrModeSwitch').parent().removeClass('is-checked');
       updateHdrMode();
@@ -2809,7 +2809,7 @@ function saveHdrMode() {
       updateHdrMode();
     } else { // Undefined
       // Unknown codec format does not support HDR profile
-      snackbarLog('Selected codec does not support the HDR profile.');
+      snackbarLog(t('Selected codec does not support the HDR profile.'));
       // Turn off the HDR mode switch and save the state
       $('#hdrModeSwitch').parent().removeClass('is-checked');
       updateHdrMode();
@@ -2851,7 +2851,7 @@ function saveGameMode() {
       }, 250);
     } else if (isPlatformVer < 9.0 && !chosenGameMode) { // Warning other Tizen versions when disabling game mode
       // Show a warning message when disabling game mode
-      snackbarLogLong('Warning: Disabling game mode may increase latency and affect your game streaming performance!');
+      snackbarLogLong(t('Warning: Disabling game mode may increase latency and affect your game streaming performance!'));
     }
   }, 100);
 }
