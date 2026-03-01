@@ -3062,6 +3062,7 @@ function initSpecialKeys() {
 function loadSystemInfo() {
   console.log('%c[index.js, loadSystemInfo]', 'color: green;', 'Loading system information...');
   const systemInfoPlaceholder = document.getElementById('systemInfoBtn');
+  systemInfoPlaceholder.innerText = t('Loading system information...');
 
   // Get the system information from the TV
   if (systemInfoPlaceholder) {
@@ -3094,7 +3095,7 @@ function loadSystemInfo() {
       'HDR Capability: ' + (isHdrCapabilitySupported ? 'Supported' : 'Unsupported');
   } else {
     console.error('%c[index.js, loadSystemInfo]', 'color: green;', 'Error: Failed to load system information!');
-    systemInfoPlaceholder.innerText = 'Failed to load system information!';
+    systemInfoPlaceholder.innerText = t('Failed to load system information!');
   }
 }
 

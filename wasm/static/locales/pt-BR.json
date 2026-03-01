@@ -115,6 +115,7 @@
   "F9": "F9",
   "Failed to connect to %1$s. Ensure Sunshine is running on your host PC or GameStream is enabled in GeForce Experience SHIELD settings.": "Falha ao conectar a %1$s. Verifique se o Sunshine está em execução no PC host ou se o GameStream está habilitado nas configurações SHIELD do GeForce Experience.",
   "Failed to launch %1$s.": "Falha ao iniciar %1$s.",
+  "Failed to load system information!": "Falha ao carregar informações do sistema!",
   "Failed to pair with %1$s": "Falha ao parear com %1$s",
   "Failed to resume %1$s": "Falha ao retomar %1$s",
   "Flip A/B face buttons": "Inverter Botões Frontais A/B",
