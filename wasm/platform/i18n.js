@@ -231,19 +231,25 @@
       return Promise.resolve(state.effectiveLocale);
     }
 
-    return readStoredPreference().then((storedPreference) => {
-      state.localePreference = storedPreference || 'auto';
-      return loadLocaleFile(SOURCE_LOCALE).then((sourceDict) => {
-        state.sourceDictionary = sourceDict || {};
-        state.initialized = true;
-        return setLanguage(state.localePreference);
-      }).catch((error) => {
-        console.error('[i18n.js] Failed to load source locale file.', error);
-        state.sourceDictionary = {};
-        state.initialized = true;
-        return setLanguage(state.localePreference);
+    function readStoredPreference() {
+      return new Promise((resolve) => {
+        if (typeof window.getData === 'function') {
+          try {
+            window.getData(LANGUAGE_SETTING_KEY, (savedValue) => {
+              const storedPreference = savedValue && typeof savedValue[LANGUAGE_SETTING_KEY] === 'string'
+                ? savedValue[LANGUAGE_SETTING_KEY]
+                : '';
+              resolve(storedPreference); // ✅ Always resolve, whether empty or not
+            });
+            return;
+          } catch (error) {
+            console.warn('[i18n.js] Failed to read language preference from settings store:', error);
+            // Fall through to resolve below
+          }
+        }
+        resolve(''); // ✅ Resolve with empty string if getData not available
       });
-    });
+    }
   }
 
   global.i18n = {

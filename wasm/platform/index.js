@@ -3102,16 +3102,19 @@ function loadUserData() {
 }
 
 function loadUserDataCb() {
-  const savedLanguagePreference = localStorage.getItem('moonlight.language') || 'auto';
-  const selectLanguageElement = document.getElementById('selectLanguage');
-  if (selectLanguageElement) {
-    selectLanguageElement.dataset.value = savedLanguagePreference;
-  }
-  if (window.i18n && typeof window.i18n.applyLanguagePreference === 'function') {
-    window.i18n.applyLanguagePreference(savedLanguagePreference).catch((error) => {
-      console.warn('%c[index.js, loadUserDataCb]', 'color: green;', 'Warning: failed to apply stored language: ' + error);
-    });
-  }
+  console.log('%c[index.js, loadUserDataCb]', 'color: green;', 'Load stored language preferences.');
+  getData('languagePreference', function(previousValue) {
+    const savedLanguagePreference = (previousValue && previousValue['languagePreference']) || 'auto';
+    const selectLanguageElement = document.getElementById('selectLanguage');
+    if (selectLanguageElement) {
+      selectLanguageElement.dataset.value = savedLanguagePreference;
+    }
+    if (window.i18n && typeof window.i18n.applyLanguagePreference === 'function') {
+      window.i18n.applyLanguagePreference(savedLanguagePreference).catch((error) => {
+        console.warn('%c[index.js, loadUserDataCb]', 'color: green;', 'Warning: failed to apply stored language: ' + error);
+      });
+    }
+  });
 
   console.log('%c[index.js, loadUserDataCb]', 'color: green;', 'Load stored resolution preferences.');
   getData('resolution', function(previousValue) {
