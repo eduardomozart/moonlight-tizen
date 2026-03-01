@@ -1,0 +1,86 @@
+name: i18n CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  sync-locales:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync locale files
+        run: node wasm/static/js/i18n-sync.js
+
+      - name: Auto-commit locale changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(i18n): sync locale source-of-truth"
+          file_pattern: "wasm/static/locales/*.json"
+          branch: ${{ github.head_ref }}
+
+  push-sources-to-tms:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sync locale files
+        run: node wasm/static/js/i18n-sync.js
+
+      # TMS example (Crowdin) - intentionally commented
+      # - name: Install Crowdin CLI
+      #   if: ${{ secrets.CROWDIN_PROJECT_ID != '' && secrets.CROWDIN_PERSONAL_TOKEN != '' }}
+      #   run: npm install --global @crowdin/cli
+      #
+      # - name: Push source strings to Crowdin
+      #   if: ${{ secrets.CROWDIN_PROJECT_ID != '' && secrets.CROWDIN_PERSONAL_TOKEN != '' }}
+      #   env:
+      #     CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+      #     CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+      #   run: crowdin upload sources
+
+      # TMS example (Transifex) - intentionally commented
+      # - name: Install Transifex CLI
+      #   if: ${{ secrets.TX_TOKEN != '' }}
+      #   run: npm install --global @transifex/cli
+      #
+      # - name: Push source strings to Transifex
+      #   if: ${{ secrets.TX_TOKEN != '' }}
+      #   env:
+      #     TX_TOKEN: ${{ secrets.TX_TOKEN }}
+      #   run: tx push -s
+
+      # TMS example (Weblate) - intentionally commented
+      # - name: Push source strings to Weblate
+      #   if: ${{ secrets.WEBLATE_TOKEN != '' }}
+      #   env:
+      #     WEBLATE_TOKEN: ${{ secrets.WEBLATE_TOKEN }}
+      #   run: |
+      #     curl -sS -X POST \
+      #       -H "Authorization: Token ${WEBLATE_TOKEN}" \
+      #       -H "Content-Type: application/json" \
+      #       "https://hosted.weblate.org/api/projects/<project-slug>/repository/" \
+      #       -d '{"operation":"push"}'

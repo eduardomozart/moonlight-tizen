@@ -25,7 +25,15 @@ const UPDATE_INTERVAL = 24 * 60 * 60 * 1000; // Automatic check for updates inte
 
 // Called by the common.js module
 function attachListeners() {
-  changeUiModeForWasmLoad();
+  const i18nInitPromise = (window.i18n && typeof window.i18n.init === 'function')
+    ? window.i18n.init().catch((error) => {
+      console.warn('%c[index.js, attachListeners]', 'color: green;', 'Warning: i18n initialization failed: ' + error);
+    })
+    : Promise.resolve();
+
+  i18nInitPromise.finally(() => {
+    changeUiModeForWasmLoad();
+  });
   initIpAddressFields();
 
   $('#addHostContainer').on('click', addHostDialog);
@@ -36,6 +44,7 @@ function attachListeners() {
   $('#quitRunningAppBtn').on('click', quitAppDialog);
   $('.videoResolutionMenu li').on('click', saveResolution);
   $('.videoFramerateMenu li').on('click', saveFramerate);
+  $('.languageMenu li').on('click', saveLanguagePreference);
   $('#bitrateSlider').on('input', saveBitrate);
   $('#framePacingSwitch').on('click', saveFramePacing);
   $('#ipAddressFieldModeSwitch').on('click', saveIpAddressFieldMode);
@@ -72,6 +81,7 @@ function attachListeners() {
 
   registerMenu('selectResolution', Views.SelectResolutionMenu);
   registerMenu('selectFramerate', Views.SelectFramerateMenu);
+  registerMenu('selectLanguage', Views.SelectLanguageMenu);
   registerMenu('selectBitrate', Views.SelectBitrateMenu);
   registerMenu('selectAudio', Views.SelectAudioMenu);
   registerMenu('selectCodec', Views.SelectCodecMenu);
@@ -143,7 +153,7 @@ function changeUiModeForWasmLoad() {
   $('#main-content').children().not('#listener, #wasmSpinner').hide();
   $('#wasmSpinner').css('display', 'inline-block');
   $('#wasmSpinnerLogo').show();
-  $('#wasmSpinnerMessage').text('Loading Moonlight...');
+  $('#wasmSpinnerMessage').text(t('Loading Moonlight...'));
 }
 
 function moduleDidLoad() {
@@ -247,18 +257,20 @@ function stopPollingHosts() {
 }
 
 function snackbarLog(givenMessage) {
+  const translatedMessage = t(givenMessage);
   console.log('%c[index.js, snackbarLog]', 'color: green;', givenMessage);
   var data = {
-    message: givenMessage,
+    message: translatedMessage,
     timeout: 2500
   };
   document.querySelector('#snackbar').MaterialSnackbar.showSnackbar(data);
 }
 
 function snackbarLogLong(givenMessage) {
+  const translatedMessage = t(givenMessage);
   console.log('%c[index.js, snackbarLogLong]', 'color: green;', givenMessage);
   var data = {
-    message: givenMessage,
+    message: translatedMessage,
     timeout: 5000
   };
   document.querySelector('#snackbar').MaterialSnackbar.showSnackbar(data);
@@ -267,7 +279,7 @@ function snackbarLogLong(givenMessage) {
 // Handle layout elements when displaying the Hosts view
 function showHostsMode() {
   console.log('%c[index.js, showHostsMode]', 'color: green;', 'Entering "Show Hosts" mode.');
-  $('#header-title').html('Hosts');
+  $('#header-title').html(t('Hosts'));
   $('#header-logo').show();
   $('#main-header').show();
   $('.nav-menu-parent').show();
@@ -300,7 +312,7 @@ function showHosts() {
   // Show a spinner while the host list loads
   $('#wasmSpinner').css('display', 'inline-block');
   $('#wasmSpinnerLogo').hide();
-  $('#wasmSpinnerMessage').text('Loading Hosts...');
+  $('#wasmSpinnerMessage').text(t('Loading Hosts...'));
 
   setTimeout(() => {
     // Hide the spinner after successfully retrieving the host list
@@ -368,7 +380,7 @@ function hostChosen(host) {
   if (!host.online) {
     // Let the user know what to do to bring the host back online and until then, we'll be back to the previous view.
     console.error('%c[index.js, hostChosen]', 'color: green;', 'Error: Connection to host failed or host is offline!');
-    snackbarLogLong('Failed to connect to the host. Ensure the host is online, Sunshine is running on your PC or GameStream is enabled in GeForce Experience SHIELD settings.');
+    snackbarLogLong(t('Failed to connect to %1$s. Ensure Sunshine is running on your host PC or GameStream is enabled in GeForce Experience SHIELD settings.', 'the host'));
     return;
   }
 
@@ -529,7 +541,7 @@ function addHostDialog() {
     var _nvhttpHost = new NvHTTP(inputHost, myUniqueid, inputHost);
     console.log('%c[index.js, addHostDialog]', 'color: green;', 'Sending connection request to host address ' + _nvhttpHost.hostname);
     _nvhttpHost.refreshServerInfoAtAddress(inputHost).then(function(success) {
-      snackbarLog('Connecting to ' + _nvhttpHost.hostname + '...');
+      snackbarLog(t('Connecting to %1$s...', _nvhttpHost.hostname));
       // Close the dialog if the user has provided the IP address
       console.log('%c[index.js, addHostDialog]', 'color: green;', 'Closing app dialog and returning.');
       addHostOverlay.style.display = 'none';
@@ -561,7 +573,7 @@ function addHostDialog() {
       initIpAddressFields();
     }.bind(this), function(failure) {
       console.error('%c[index.js, addHostDialog]', 'color: green;', 'Error: Failed API object:\n', _nvhttpHost, '\n' + _nvhttpHost.toString()); // Logging both object (for console) and toString-ed object (for text logs)
-      snackbarLogLong('Failed to connect to ' + (_nvhttpHost.hostname || 'the host') + '. Ensure Sunshine is running on your PC or GameStream is enabled in GeForce Experience SHIELD settings.');
+      snackbarLogLong(t('Failed to connect to %1$s. Ensure Sunshine is running on your host PC or GameStream is enabled in GeForce Experience SHIELD settings.', _nvhttpHost.hostname || t('the host')));
       // Re-enable the Continue button after failure processing
       $('#continueAddHost').removeClass('mdl-button--disabled').prop('disabled', false);
       // Clear the input field after failure processing
@@ -587,7 +599,7 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
   nvhttpHost.pollServer(function(returnedNvHTTPHost) {
     if (!returnedNvHTTPHost.online) {
       console.error('%c[index.js, pairingDialog]', 'color: green;', 'Error: Failed to connect to ' + nvhttpHost.hostname + '. Ensure your host PC is online!', nvhttpHost, '\n' + nvhttpHost.toString()); // Logging both object (for console) and toString-ed object (for text logs)
-      snackbarLogLong('Failed to connect to ' + nvhttpHost.hostname + '. Ensure Sunshine is running on your host PC or GameStream is enabled in the GeForce Experience SHIELD settings.');
+      snackbarLogLong(t('Failed to connect to %1$s. Ensure Sunshine is running on your host PC or GameStream is enabled in GeForce Experience SHIELD settings.', nvhttpHost.hostname || t('the host')));
       onFailure();
       return;
     }
@@ -598,7 +610,7 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
     }
 
     if (nvhttpHost.currentGame != 0) {
-      snackbarLogLong(nvhttpHost.hostname + ' is currently in a game session. Please quit the running app or restart the computer, then try again.');
+      snackbarLogLong(t('%1$s is currently in a game session. Please quit the running app or restart the computer, then try again.', nvhttpHost.hostname));
       onFailure();
       return;
     }
@@ -610,10 +622,7 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
 
     // Change the dialog text element to include the random PIN number
     $('#pairingDialogText').html(
-      'Please enter the following PIN on the target PC: ' + randomNumber + '<br><br>' +
-      'If your host PC is running Sunshine (all GPUs), navigate to the Sunshine Web UI to enter the PIN.<br><br>' +
-      'Alternatively, if your host PC has NVIDIA GameStream (NVIDIA-only), navigate to the GeForce Experience to enter the PIN.<br><br>' +
-      'This dialog will close once the pairing is complete.'
+      t('Please enter the following PIN on the target PC: %1$s<br><br>If your host PC is running Sunshine (all GPUs), navigate to the Sunshine Web UI to enter the PIN.<br><br>Alternatively, if your host PC has NVIDIA GameStream (NVIDIA-only), navigate to the GeForce Experience to enter the PIN.<br><br>This dialog will close once the pairing is complete.', randomNumber)
     );
 
     // Show the dialog and push the view
@@ -634,7 +643,7 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
 
     console.log('%c[index.js, pairingDialog]', 'color: green;', 'Sending pairing request to ' + nvhttpHost.hostname + ' with PIN ' + randomNumber);
     nvhttpHost.pair(randomNumber).then(function() {
-      snackbarLog('Successfully paired with ' + nvhttpHost.hostname);
+      snackbarLog(t('Successfully paired with %1$s', nvhttpHost.hostname));
       // Close the dialog if the pairing was successful
       console.log('%c[index.js, pairingDialog]', 'color: green;', 'Closing app dialog and returning.');
       pairingOverlay.style.display = 'none';
@@ -644,13 +653,13 @@ function pairingDialog(nvhttpHost, onSuccess, onFailure) {
       onSuccess();
     }, function(failedPairing) {
       console.error('%c[index.js, pairingDialog]', 'color: green;', 'Error: Failed API object:\n', nvhttpHost, '\n' + nvhttpHost.toString()); // Logging both object (for console) and toString-ed object (for text logs)
-      snackbarLog('Failed to pair with ' + nvhttpHost.hostname);
+      snackbarLog(t('Failed to pair with %1$s', nvhttpHost.hostname));
       // If the host is already in a streaming session or failed during pairing,
       // change the dialog text element to include the hostname and display the returned error message
       if (nvhttpHost.currentGame != 0) {
-        $('#pairingDialogText').html('Error: ' + nvhttpHost.hostname + ' is currently busy!<br><br>You must stop the running app in order to pair with the host.');
+        $('#pairingDialogText').html(t('Error: %1$s is currently busy!<br><br>You must stop the running app in order to pair with the host.', nvhttpHost.hostname));
       } else {
-        $('#pairingDialogText').html('Error: Failed to pair with ' + nvhttpHost.hostname + '.<br><br>Please, try pairing with the host again.');
+        $('#pairingDialogText').html(t('Error: Failed to pair with %1$s.<br><br>Please, try pairing with the host again.', nvhttpHost.hostname));
       }
       onFailure();
     });
@@ -796,10 +805,10 @@ function hostMenuDialog(host) {
     {
       id: 'refreshApps-' + host.hostname,
       class: 'host-menu-button',
-      text: 'Refresh apps',
+      text: t('Refresh apps'),
       action: function() {
         // Refresh the list of apps for the target host
-        snackbarLogLong('Refreshing the list of ' + host.hostname + ' applications...');
+        snackbarLogLong(t('Refreshing the list of %1$s applications...', host.hostname));
         host.clearBoxArt();
         host.getAppListWithCacheFlush();
       }
@@ -807,17 +816,17 @@ function hostMenuDialog(host) {
     {
       id: 'wakeHost-' + host.hostname,
       class: 'host-menu-button',
-      text: 'Wake PC',
+      text: t('Wake PC'),
       action: function() {
         // Send a Wake-on-LAN request to the target host
-        snackbarLogLong('Sending a Wake On LAN request to ' + host.hostname + '...');
+        snackbarLogLong(t('Sending a Wake On LAN request to %1$s...', host.hostname));
         host.sendWOL();
       }
     },
     {
       id: 'deleteHost-' + host.hostname,
       class: 'host-menu-button',
-      text: 'Delete PC',
+      text: t('Delete PC'),
       action: function() {
         // Remove the selected host from the list
         setTimeout(() => deleteHostDialog(host), 100);
@@ -826,7 +835,7 @@ function hostMenuDialog(host) {
     {
       id: 'viewDetails-' + host.hostname,
       class: 'host-menu-button',
-      text: 'View Details',
+      text: t('View Details'),
       action: function() {
         // View details of the selected host
         setTimeout(() => hostDetailsDialog(host), 100);
@@ -866,7 +875,7 @@ function hostMenuDialog(host) {
     type: 'button',
     id: 'closeHostMenu',
     class: 'mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect',
-    text: 'Close'
+    text: t('Close')
   });
 
   // Close the dialog if the Close button is pressed
@@ -900,8 +909,8 @@ function deleteHostDialog(host) {
   var deleteHostDialog = document.querySelector('#deleteHostDialog');
 
   // Change the dialog title and text elements to include the hostname
-  document.getElementById('deleteHostDialogTitle').innerHTML = 'Delete Host';
-  document.getElementById('deleteHostDialogText').innerHTML = 'Are you sure you want to delete ' + host.hostname + '?';
+  document.getElementById('deleteHostDialogTitle').innerHTML = t('Delete Host');
+  document.getElementById('deleteHostDialogText').innerHTML = t('Are you sure you want to delete %1$s?', host.hostname);
 
   // Show the dialog and push the view
   deleteHostOverlay.style.display = 'flex';
@@ -933,7 +942,7 @@ function deleteHostDialog(host) {
     // Save the updated hosts
     saveHosts();
     // If host removed, show snackbar message
-    snackbarLog(host.hostname + ' has been deleted successfully.');
+    snackbarLog(t('%1$s has been deleted successfully.', host.hostname));
     deleteHostOverlay.style.display = 'none';
     deleteHostDialog.close();
     isDialogOpen = false;
@@ -954,8 +963,8 @@ function deleteAllHostsDialog() {
     var deleteHostDialog = document.querySelector('#deleteHostDialog');
 
     // Change the dialog title and text elements
-    document.getElementById('deleteHostDialogTitle').innerHTML = 'Delete All Hosts';
-    document.getElementById('deleteHostDialogText').innerHTML = 'Are you sure you want to delete all existing hosts?';
+    document.getElementById('deleteHostDialogTitle').innerHTML = t('Delete All Hosts');
+    document.getElementById('deleteHostDialogText').innerHTML = t('Are you sure you want to delete all existing hosts?');
     
     // Show the dialog and push the view
     deleteHostOverlay.style.display = 'flex';
@@ -1019,7 +1028,7 @@ function hostDetailsDialog(host) {
   $('<h3>', {
     id: 'hostDetailsDialogTitle-' + host.serverUid,
     class: 'mdl-dialog__title',
-    text: 'Host Details'
+    text: t('Host Details')
   }).appendTo(hostDetailsDialog);
 
   // Create a content section inside the dialog
@@ -1031,15 +1040,17 @@ function hostDetailsDialog(host) {
   $('<p>', {
     id: 'hostDetailsDialogText-' + host.serverUid,
     class: 'host-details-text',
-    html: 'Name: ' + host.hostname + '<br>' +
-          'State: ' + (host.online ? 'ONLINE' : 'OFFLINE') + '<br>' +
-          'Active Address: ' + (host.address && host.externalPort ? host.address + ':' + host.externalPort : 'NULL') + '<br>' +
-          'UUID: ' + (host.serverUid ? host.serverUid : 'NULL') + '<br>' +
-          'Local Address: ' + (host.localAddress && host.externalPort ? host.localAddress + ':' + host.externalPort : 'NULL') + '<br>' +
-          'MAC Address: ' + (host.macAddress ? host.macAddress : 'NULL') + '<br>' +
-          'Pair State: ' + (host.paired ? 'PAIRED' : 'UNPAIRED') + '<br>' +
-          'Running Game ID: ' + host.currentGame + '<br>' +
-          'HTTPS Port: ' + (host.httpsPort ? host.httpsPort : 'NULL')
+    html: [
+      t('Name: %1$s', host.hostname),
+      t('State: %1$s', host.online ? t('ONLINE') : t('OFFLINE')),
+      t('Active Address: %1$s', host.address && host.externalPort ? host.address + ':' + host.externalPort : t('NULL')),
+      t('UUID: %1$s', host.serverUid ? host.serverUid : t('NULL')),
+      t('Local Address: %1$s', host.localAddress && host.externalPort ? host.localAddress + ':' + host.externalPort : t('NULL')),
+      t('MAC Address: %1$s', host.macAddress ? host.macAddress : t('NULL')),
+      t('Pair State: %1$s', host.paired ? t('PAIRED') : t('UNPAIRED')),
+      t('Running Game ID: %1$s', host.currentGame),
+      t('HTTPS Port: %1$s', host.httpsPort ? host.httpsPort : t('NULL'))
+    ].join('<br>')
   }).appendTo(hostDetailsDialogContent);
 
   // Create the actions section inside the dialog
@@ -1052,7 +1063,7 @@ function hostDetailsDialog(host) {
     type: 'button',
     id: 'closeHostDetails',
     class: 'mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect',
-    text: 'Close'
+    text: t('Close')
   });
 
   // Close the dialog if the Close button is pressed
@@ -1106,7 +1117,7 @@ function appSupportDialog() {
 // Handle layout elements when displaying the Settings view
 function showSettingsMode() {
   console.log('%c[index.js, showSettingsMode]', 'color: green;', 'Entering "Show Settings" mode.');
-  $('#header-title').html('Settings');
+  $('#header-title').html(t('Settings'));
   $('#header-logo').show();
   $('#main-header').show();
   $('#goBackBtn').show();
@@ -1138,7 +1149,7 @@ function showSettings() {
   // Show a spinner while the setting list loads
   $('#wasmSpinner').css('display', 'inline-block');
   $('#wasmSpinnerLogo').hide();
-  $('#wasmSpinnerMessage').text('Loading Settings...');
+  $('#wasmSpinnerMessage').text(t('Loading Settings...'));
 
   setTimeout(() => {
     // Hide the spinner after successfully retrieving the setting list
@@ -1510,7 +1521,7 @@ function checkForAppUpdatesAtStartup() {
           // Check if a new version update is available
           if (checkVersionUpdate(currentVersion, latestVersion)) {
             // Show snackbar message with new version to inform user to update the app
-            snackbarLogLong(`🚀 Version ${latestVersion} is now available! Check out the latest features & improvements.`);
+            snackbarLogLong(t('🚀 Version %1$s is now available! Check out the latest features & improvements.', latestVersion));
             // Create and display the Update App button with tooltip and additional layout spacer
             updateAppButton(latestVersion);
           }
@@ -1584,8 +1595,8 @@ function warningDialog(title, message) {
   var warningDialog = document.querySelector('#warningDialog');
 
   // Change the dialog title and text element with a custom warning message
-  document.getElementById('warningDialogTitle').innerHTML = title;
-  document.getElementById('warningDialogText').innerHTML = message;
+  document.getElementById('warningDialogTitle').innerHTML = t(title);
+  document.getElementById('warningDialogText').innerHTML = t(message);
 
   // Show the dialog and push the view
   warningDialogOverlay.style.display = 'flex';
@@ -1788,7 +1799,7 @@ function sortTitles(list, sortOrder) {
 // Handle layout elements when displaying the Apps view
 function showAppsMode() {
   console.log('%c[index.js, showAppsMode]', 'color: green;', 'Entering "Show Apps" mode.');
-  $('#header-title').html('Apps');
+  $('#header-title').html(t('Apps'));
   $('#header-logo').show();
   $('#main-header').show();
   $('#goBackBtn').show();
@@ -1834,7 +1845,7 @@ function showApps(host) {
   // Show a spinner while the app list loads
   $('#wasmSpinner').css('display', 'inline-block');
   $('#wasmSpinnerLogo').hide();
-  $('#wasmSpinnerMessage').text('Loading Apps...');
+  $('#wasmSpinnerMessage').text(t('Loading Apps...'));
 
   // Remove all game container elements from the game grid and from any other div elements
   $('#game-grid .game-container').remove();
@@ -2176,7 +2187,7 @@ function startGame(host, appID) {
       $('#connection-warnings, #performance-stats').css('background', 'transparent').text('');
 
       // Shows a loading message to launch the application and start stream mode
-      $('#loadingSpinnerMessage').text('Starting ' + appToStart.title + '...');
+      $('#loadingSpinnerMessage').text(t('Starting %1$s...', appToStart.title));
       showStreamMode();
 
       // Check if user wants to resume the already-running app
@@ -2197,7 +2208,7 @@ function startGame(host, appID) {
           var status_message = $root.attr('status_message');
           if (status_code != 200) {
             $('#loadingSpinnerMessage').text('');
-            snackbarLogLong('Error ' + status_code + ': ' + status_message);
+            snackbarLogLong(t('Error %1$s: %2$s', status_code, status_message));
             showApps(host);
             setTimeout(() => {
               // Scroll to the current game row
@@ -2217,7 +2228,7 @@ function startGame(host, appID) {
           ]);
         }, function(failedResumeApp) {
           console.error('%c[index.js, startGame]', 'color: green;', 'Error: Failed to resume app with id: ' + appID + '\n Returned error was: ' + failedResumeApp + '!');
-          snackbarLog('Failed to resume ' + appToStart.title);
+          snackbarLog(t('Failed to resume %1$s', appToStart.title));
           showApps(host);
           setTimeout(() => {
             // Scroll to the current game row
@@ -2248,10 +2259,10 @@ function startGame(host, appID) {
           if (status_code == 4294967295 && status_message == 'Invalid') {
             // Special case handling an audio capture error which GFE doesn't provide any useful status message
             status_code = 418;
-            status_message = 'Audio capture device is missing. Please reinstall the audio drivers.';
+            status_message = t('Audio capture device is missing. Please reinstall the audio drivers.');
           }
           $('#loadingSpinnerMessage').text('');
-          snackbarLogLong('Error ' + status_code + ': ' + status_message);
+          snackbarLogLong(t('Error %1$s: %2$s', status_code, status_message));
           showApps(host);
           setTimeout(() => {
             // Scroll to the current game row
@@ -2271,7 +2282,7 @@ function startGame(host, appID) {
         ]);
       }, function(failedLaunchApp) {
         console.error('%c[index.js, startGame]', 'color: green;', 'Error: Failed to launch app with id: ' + appID + '\n Returned error was: ' + failedLaunchApp + '!');
-        snackbarLog('Failed to launch ' + appToStart.title + '.');
+        snackbarLog(t('Failed to launch %1$s.', appToStart.title));
         showApps(host);
         setTimeout(() => {
           // Scroll to the current game row
@@ -2302,9 +2313,9 @@ function stopGame(host, callbackFunction) {
         return;
       }
       var appTitle = runningApp.title;
-      snackbarLog('Quitting ' + appTitle + '...');
+      snackbarLog(t('Quitting %1$s...', appTitle));
       host.quitApp().then(function(ret2) {
-        snackbarLog('Successfully quit ' + appTitle);
+        snackbarLog(t('Successfully quit %1$s', appTitle));
         host.refreshServerInfo().then(function(ret3) {
           // Refresh to show no app is currently running
           showApps(host);
@@ -2497,6 +2508,17 @@ function saveFramerate() {
   setBitratePresetValue();
   // Trigger warning check after changing video frame rate
   warnResolutionFramerate();
+}
+
+function saveLanguagePreference() {
+  var chosenLanguage = $(this).data('value') || 'auto';
+  $('#selectLanguage').text($(this).text()).data('value', chosenLanguage);
+  console.log('%c[index.js, saveLanguagePreference]', 'color: green;', 'Saving language preference value: ' + chosenLanguage);
+  if (window.i18n && typeof window.i18n.applyLanguagePreference === 'function') {
+    window.i18n.applyLanguagePreference(chosenLanguage).catch((error) => {
+      console.warn('%c[index.js, saveLanguagePreference]', 'color: green;', 'Warning: failed to apply language: ' + error);
+    });
+  }
 }
 
 function warnResolutionFramerate() {
@@ -3080,6 +3102,17 @@ function loadUserData() {
 }
 
 function loadUserDataCb() {
+  const savedLanguagePreference = localStorage.getItem('moonlight.language') || 'auto';
+  const selectLanguageElement = document.getElementById('selectLanguage');
+  if (selectLanguageElement) {
+    selectLanguageElement.dataset.value = savedLanguagePreference;
+  }
+  if (window.i18n && typeof window.i18n.applyLanguagePreference === 'function') {
+    window.i18n.applyLanguagePreference(savedLanguagePreference).catch((error) => {
+      console.warn('%c[index.js, loadUserDataCb]', 'color: green;', 'Warning: failed to apply stored language: ' + error);
+    });
+  }
+
   console.log('%c[index.js, loadUserDataCb]', 'color: green;', 'Load stored resolution preferences.');
   getData('resolution', function(previousValue) {
     if (previousValue.resolution != null) {

@@ -695,6 +695,7 @@ const Views = {
   },
   BasicSettings: {
     view: new ListView(() => [
+      'selectLanguage',
       'selectResolution',
       'selectFramerate',
       'selectBitrate',
@@ -804,6 +805,43 @@ const Views = {
     back: function() {
       document.getElementById('selectFramerate').click();
       document.getElementById('selectFramerate').focus();
+    },
+    press: function() {},
+    switch: function() {},
+    enter: function() {
+      mark(this.view.current());
+    },
+    leave: function() {
+      unmark(this.view.current());
+    },
+  },
+  SelectLanguageMenu: {
+    isActive: () => isPopupActive('languageMenu'),
+    view: new ListView(() =>
+      document.getElementById('languageMenu')
+      .parentNode.children[3].children[1].children),
+    up: function() {
+      this.view.prevOption();
+      document.getElementById(this.view.current()).focus();
+    },
+    down: function() {
+      this.view.nextOption();
+      document.getElementById(this.view.current()).focus();
+    },
+    left: function() {},
+    right: function() {},
+    select: function() {
+      this.view.current().click();
+      document.getElementById('selectLanguage').focus();
+    },
+    accept: function() {
+      this.view.current().click();
+      Navigation.pop();
+      document.getElementById('selectLanguage').focus();
+    },
+    back: function() {
+      document.getElementById('selectLanguage').click();
+      document.getElementById('selectLanguage').focus();
     },
     press: function() {},
     switch: function() {},

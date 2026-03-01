@@ -872,13 +872,13 @@ body {
     background-color: #404354;
     border: 1px solid #FFA620;
 }
-#selectResolution, #selectFramerate, #selectBitrate, #removeAllHostsBtn,
+#selectLanguage, #selectResolution, #selectFramerate, #selectBitrate, #removeAllHostsBtn,
 #selectAudio, #selectCodec, #navigationGuideBtn, #checkUpdatesBtn, #restartAppBtn {
     font-size: 1.45rem;
     letter-spacing: 0.5px;
     text-indent: 36px;
 }
-#selectResolution, #selectFramerate, #selectBitrate, #framePacingBtn, #ipAddressFieldModeBtn,
+#selectLanguage, #selectResolution, #selectFramerate, #selectBitrate, #framePacingBtn, #ipAddressFieldModeBtn,
 #sortAppsListBtn, #optimizeGamesBtn, #removeAllHostsBtn, #rumbleFeedbackBtn, #mouseEmulationBtn,
 #flipABfaceButtonsBtn, #flipXYfaceButtonsBtn, #selectAudio, #audioSyncBtn, #playHostAudioBtn,
 #selectCodec, #hdrModeBtn, #fullRangeBtn, #gameModeBtn, #unlockAllFpsBtn, #disableWarningsBtn,
@@ -920,11 +920,11 @@ body {
 .mdl-menu__item.hovered, .mdl-menu__item:hover, .mdl-menu__item:focus {
     background-color: #484C5F;
 }
-.videoResolutionMenu, .videoFramerateMenu, .videoBitrateMenu,
+.languageMenu, .videoResolutionMenu, .videoFramerateMenu, .videoBitrateMenu,
 .audioConfigMenu, .videoCodecMenu, .mdl-menu__container {
     width: 59.4% !important;
 }
-.videoResolutionMenu, .videoFramerateMenu, .videoBitrateMenu,
+.languageMenu, .videoResolutionMenu, .videoFramerateMenu, .videoBitrateMenu,
 .audioConfigMenu, .videoCodecMenu, .mdl-menu__outline {
     width: 100% !important;
     top: 2.5px !important;
@@ -965,7 +965,7 @@ body {
     float: right;
     margin: 5px 28px 5px 28px;
 }
-#videoResolutionMenu > #selectResolution, #videoFramerateMenu > #selectFramerate,
+#languageMenu > #selectLanguage, #videoResolutionMenu > #selectResolution, #videoFramerateMenu > #selectFramerate,
 #videoBitrateMenu > #selectBitrate, #audioConfigMenu > #selectAudio,
 #videoCodecMenu > #selectCodec {
     color: #ececec;
@@ -990,7 +990,7 @@ body {
 #closeWarning:focus, #continueRestartApp:hover, #continueRestartApp:focus, #cancelRestartApp:hover, #cancelRestartApp:focus, #continueExitApp:hover,
 #continueExitApp:focus, #cancelExitApp:hover, #cancelExitApp:focus, #settingsBtn:hover, #settingsBtn:focus, #supportBtn:hover, #supportBtn:focus,
 #goBackBtn:hover, #goBackBtn:focus, #restoreDefaultsBtn:hover, #restoreDefaultsBtn:focus, #quitRunningAppBtn:hover, #quitRunningAppBtn:focus,
-#selectResolution:hover, #selectResolution:focus, #selectFramerate:hover, #selectFramerate:focus, #selectBitrate:hover, #selectBitrate:focus,
+#selectLanguage:hover, #selectLanguage:focus, #selectResolution:hover, #selectResolution:focus, #selectFramerate:hover, #selectFramerate:focus, #selectBitrate:hover, #selectBitrate:focus,
 #framePacingBtn:hover, #framePacingBtn:focus, #ipAddressFieldModeBtn:hover, #ipAddressFieldModeBtn:focus, #sortAppsListBtn:hover,
 #sortAppsListBtn:focus, #optimizeGamesBtn:hover, #optimizeGamesBtn:focus, #removeAllHostsBtn:hover, #removeAllHostsBtn:focus, #rumbleFeedbackBtn:hover,
 #rumbleFeedbackBtn:focus, #mouseEmulationBtn:hover, #mouseEmulationBtn:focus, #flipABfaceButtonsBtn:hover, #flipABfaceButtonsBtn:focus,

@@ -29,6 +29,74 @@ const AsyncFunctions = {
 var callbacks = {}
 var callbacks_ids = 1;
 
+function normalizeBackendMessageText(text) {
+  return String(text || '')
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .trim();
+}
+
+function replaceKnownStageLabels(text) {
+  const stageLabels = [
+    'none',
+    'platform initialization',
+    'name resolution',
+    'audio stream initialization',
+    'RTSP handshake',
+    'control stream initialization',
+    'video stream initialization',
+    'input stream initialization',
+    'control stream establishment',
+    'video stream establishment',
+    'audio stream establishment',
+    'input stream establishment',
+  ];
+
+  let translated = text.replace(/\bstarting\b/gi, t('Starting'));
+  stageLabels.forEach((label) => {
+    const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    translated = translated.replace(new RegExp(escapedLabel, 'gi'), t(label));
+  });
+  return translated;
+}
+
+function translateBackendMessage(text) {
+  const normalized = normalizeBackendMessageText(text);
+
+  switch (normalized) {
+    case 'none':
+      return t('none');
+    case 'platform initialization':
+      return t('platform initialization');
+    case 'name resolution':
+      return t('name resolution');
+    case 'audio stream initialization':
+      return t('audio stream initialization');
+    case 'RTSP handshake':
+      return t('RTSP handshake');
+    case 'control stream initialization':
+      return t('control stream initialization');
+    case 'video stream initialization':
+      return t('video stream initialization');
+    case 'input stream initialization':
+      return t('input stream initialization');
+    case 'control stream establishment':
+      return t('control stream establishment');
+    case 'video stream establishment':
+      return t('video stream establishment');
+    case 'audio stream establishment':
+      return t('audio stream establishment');
+    case 'input stream establishment':
+      return t('input stream establishment');
+    case 'Connection to PC has been improved':
+      return t('Connection to PC has been improved');
+    case 'Slow connection to PC.\nReduce your bitrate!':
+      return t('Slow connection to PC.\nReduce your bitrate!');
+    default:
+      return replaceKnownStageLabels(t(normalized));
+  }
+}
+
 /**
  * var sendMessage - Sends a message with arguments to the Wasm module
  *
@@ -121,14 +189,14 @@ function handleMessage(msg) {
     $('#wasm_module').focus();
   } else if (msg.indexOf('ProgressMsg: ') === 0) {
     // Show progress message under loading spinner
-    $('#loadingSpinnerMessage').text(msg.replace('ProgressMsg: ', ''));
+    $('#loadingSpinnerMessage').text(translateBackendMessage(msg.replace('ProgressMsg: ', '')));
   } else if (msg.indexOf('TransientMsg: ') === 0) {
     // Show transient message as notification
-    snackbarLogLong(msg.replace('TransientMsg: ', ''));
+    snackbarLogLong(translateBackendMessage(msg.replace('TransientMsg: ', '')));
   } else if (msg.indexOf('DialogMsg: ') === 0) {
     // Show dialog message as notification
     // FIXME: Really use a dialog
-    snackbarLogLong(msg.replace('DialogMsg: ', ''));
+    snackbarLogLong(translateBackendMessage(msg.replace('DialogMsg: ', '')));
   } else if (msg === 'displayVideo') {
     // Show the video stream now
     $('#listener').addClass('fullscreen');
@@ -139,7 +207,7 @@ function handleMessage(msg) {
   } else if (msg.indexOf('WarningMsg: ') === 0) {
     // Show the connection warnings overlay
     $('#connection-warnings').css('background', 'rgba(0, 0, 0, 0.5)');
-    $('#connection-warnings').text(msg.replace('WarningMsg: ', ''));
+    $('#connection-warnings').text(translateBackendMessage(msg.replace('WarningMsg: ', '')));
   } else if (msg.indexOf('NoStatMsg: ') === 0) {
     // Toggle the performance stats switch and save the state
     if ($('#performanceStatsSwitch').prop('checked')) {
