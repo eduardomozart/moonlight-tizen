@@ -197,13 +197,10 @@
     updateLocalizedSelections();
   }
 
-  function populateLanguageMenu() {
+  function populateLanguageMenu(onSelect) {
     const menu = document.querySelector('ul.languageMenu');
     const button = document.getElementById('selectLanguage');
     if (!menu) return;
-
-    // Clear any existing hardcoded items
-    menu.innerHTML = '';
 
     // Build <li> items from LOCALE_LABELS
     Object.entries(LOCALE_LABELS).forEach(([value, label]) => {
@@ -211,6 +208,9 @@
       li.className = 'mdl-menu__item';
       li.setAttribute('data-value', value);
       li.textContent = label;
+      if (typeof onSelect === 'function') {
+        li.addEventListener('click', onSelect);
+      }
       menu.appendChild(li);
     });
 
@@ -262,7 +262,6 @@
     return readStoredPreference().then((storedPreference) => {
       const preference = storedPreference || 'auto';
       state.localePreference = preference;
-      populateLanguageMenu();
       return loadLocaleFile(SOURCE_LOCALE)
         .then((sourceDict) => {
           state.sourceDictionary = sourceDict || {};
@@ -285,6 +284,7 @@
     refreshUI,
     setLanguage,
     applyLanguagePreference,
+    populateLanguageMenu,
     getPreference: () => state.localePreference,
     getLocale: () => state.effectiveLocale,
     getSupportedLocales: () => SUPPORTED_LOCALES.slice(),

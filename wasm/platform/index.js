@@ -33,6 +33,9 @@ function attachListeners() {
 
   i18nInitPromise.finally(() => {
     changeUiModeForWasmLoad();
+    if (window.i18n && typeof window.i18n.populateLanguageMenu === 'function') {
+      window.i18n.populateLanguageMenu(saveLanguagePreference);
+    }
   });
   initIpAddressFields();
 
@@ -44,7 +47,6 @@ function attachListeners() {
   $('#quitRunningAppBtn').on('click', quitAppDialog);
   $('.videoResolutionMenu li').on('click', saveResolution);
   $('.videoFramerateMenu li').on('click', saveFramerate);
-  $('.languageMenu li').on('click', saveLanguagePreference);
   $('#bitrateSlider').on('input', saveBitrate);
   $('#framePacingSwitch').on('click', saveFramePacing);
   $('#ipAddressFieldModeSwitch').on('click', saveIpAddressFieldMode);
