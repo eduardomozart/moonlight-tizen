@@ -56,6 +56,7 @@ RUN ./emsdk activate latest-fastcomp
 RUN echo 'JAVA = "/usr/bin/java"' >> /home/moonlight/.emscripten
 
 # Copy ONLY the files required for C++ compilation
+WORKDIR /home/moonlight
 COPY --chown=moonlight CMakeLists.txt ./moonlight-tizen/
 COPY --chown=moonlight h264bitstream ./moonlight-tizen/h264bitstream/
 COPY --chown=moonlight libgamestream ./moonlight-tizen/libgamestream/
