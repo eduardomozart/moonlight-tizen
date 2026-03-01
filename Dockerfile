@@ -55,15 +55,31 @@ WORKDIR emscripten-release-bundle/emsdk
 RUN ./emsdk activate latest-fastcomp
 RUN echo 'JAVA = "/usr/bin/java"' >> /home/moonlight/.emscripten
 
-# Compile the source code and prepare the widget directory
-WORKDIR /home/moonlight
-COPY --chown=moonlight . ./moonlight-tizen
+# Copy ONLY the files required for C++ compilation
+COPY --chown=moonlight CMakeLists.txt ./moonlight-tizen/
+COPY --chown=moonlight h264bitstream ./moonlight-tizen/h264bitstream/
+COPY --chown=moonlight libgamestream ./moonlight-tizen/libgamestream/
+COPY --chown=moonlight moonlight-common-c ./moonlight-tizen/moonlight-common-c/
+COPY --chown=moonlight opus ./moonlight-tizen/opus/
+COPY --chown=moonlight ports ./moonlight-tizen/ports/ 
+COPY --chown=moonlight wasm/*.c ./moonlight-tizen/wasm/
+COPY --chown=moonlight wasm/*.cpp ./moonlight-tizen/wasm/
+COPY --chown=moonlight wasm/*.hpp ./moonlight-tizen/wasm/
+COPY --chown=moonlight wasm/dispatcher ./moonlight-tizen/wasm/dispatcher/
+
 RUN cmake \
 	-DCMAKE_TOOLCHAIN_FILE=/home/moonlight/emscripten-release-bundle/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake \
 	-G Ninja \
 	-S moonlight-tizen \
 	-B build
 RUN cmake --build build
+
+# Copy the remaining frontend files required for packaging the application into a WGT file
+COPY --chown=moonlight res/ ./moonlight-tizen/res/
+COPY --chown=moonlight wasm/index.html ./moonlight-tizen/wasm/
+COPY --chown=moonlight wasm/platform/ ./moonlight-tizen/wasm/platform/
+COPY --chown=moonlight wasm/static/ ./moonlight-tizen/wasm/static/
+
 RUN cmake --install build --prefix build
 RUN cp moonlight-tizen/res/icon.png build/widget/
 
