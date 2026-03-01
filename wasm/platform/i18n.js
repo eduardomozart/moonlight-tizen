@@ -102,16 +102,14 @@
             const storedPreference = savedValue && typeof savedValue[LANGUAGE_SETTING_KEY] === 'string'
               ? savedValue[LANGUAGE_SETTING_KEY]
               : '';
-            if (storedPreference) {
-              resolve(storedPreference);
-              return;
-            }
+            resolve(storedPreference);
           });
           return;
         } catch (error) {
           console.warn('[i18n.js] Failed to read language preference from settings store:', error);
         }
       }
+      resolve('');
     });
   }
 
@@ -140,6 +138,12 @@
   }
 
   function updateLocalizedSelections() {
+    const selectLanguage = document.getElementById('selectLanguage');
+    if (selectLanguage) {
+      const value = selectLanguage.getAttribute('data-value') || state.localePreference || 'auto';
+      selectLanguage.textContent = LOCALE_LABELS[value] || LOCALE_LABELS.auto;
+    }
+
     const selectResolution = document.getElementById('selectResolution');
     if (selectResolution) {
       const selectedItem = document.querySelector(`.videoResolutionMenu li[data-value="${selectResolution.dataset.value}"]`);
@@ -193,6 +197,30 @@
     updateLocalizedSelections();
   }
 
+  function populateLanguageMenu() {
+    const menu = document.querySelector('ul.languageMenu');
+    const button = document.getElementById('selectLanguage');
+    if (!menu) return;
+
+    // Clear any existing hardcoded items
+    menu.innerHTML = '';
+
+    // Build <li> items from LOCALE_LABELS
+    Object.entries(LOCALE_LABELS).forEach(([value, label]) => {
+      const li = document.createElement('li');
+      li.className = 'mdl-menu__item';
+      li.setAttribute('data-value', value);
+      li.textContent = label;
+      menu.appendChild(li);
+    });
+
+    // Set the button text to match the current data-value
+    if (button) {
+      const currentValue = button.getAttribute('data-value') || 'auto';
+      button.textContent = LOCALE_LABELS[currentValue] || LOCALE_LABELS['auto'];
+    }
+  }
+
   function applyLanguagePreference(preference) {
     state.localePreference = preference || 'auto';
     writeStoredPreference(state.localePreference);
@@ -231,25 +259,23 @@
       return Promise.resolve(state.effectiveLocale);
     }
 
-    function readStoredPreference() {
-      return new Promise((resolve) => {
-        if (typeof window.getData === 'function') {
-          try {
-            window.getData(LANGUAGE_SETTING_KEY, (savedValue) => {
-              const storedPreference = savedValue && typeof savedValue[LANGUAGE_SETTING_KEY] === 'string'
-                ? savedValue[LANGUAGE_SETTING_KEY]
-                : '';
-              resolve(storedPreference); // ✅ Always resolve, whether empty or not
-            });
-            return;
-          } catch (error) {
-            console.warn('[i18n.js] Failed to read language preference from settings store:', error);
-            // Fall through to resolve below
-          }
-        }
-        resolve(''); // ✅ Resolve with empty string if getData not available
-      });
-    }
+    return readStoredPreference().then((storedPreference) => {
+      const preference = storedPreference || 'auto';
+      state.localePreference = preference;
+      populateLanguageMenu();
+      return loadLocaleFile(SOURCE_LOCALE)
+        .then((sourceDict) => {
+          state.sourceDictionary = sourceDict || {};
+        })
+        .catch(() => {
+          state.sourceDictionary = {};
+        })
+        .then(() => setLanguage(preference))
+        .then((effectiveLocale) => {
+          state.initialized = true;
+          return effectiveLocale;
+        });
+    });
   }
 
   global.i18n = {
