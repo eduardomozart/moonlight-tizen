@@ -522,6 +522,10 @@ typedef struct _SERVER_INFORMATION {
     // Text inside 'sessionUrl0' tag in /resume and /launch (if present)
     const char* rtspSessionUrl;
 
+    // Text inside 'ExternalPort' tag in /serverinfo (if present).
+    // This is the HTTP base port for stream port offset calculations.
+    uint16_t externalPort;
+
     // Specifies the 'ServerCodecModeSupport' from the /serverinfo response.
     int serverCodecModeSupport;
 } SERVER_INFORMATION, *PSERVER_INFORMATION;

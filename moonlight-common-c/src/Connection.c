@@ -29,6 +29,7 @@ uint16_t RtspPortNumber;
 uint16_t ControlPortNumber;
 uint16_t AudioPortNumber;
 uint16_t VideoPortNumber;
+uint16_t HttpPortNumber;
 SS_PING AudioPingPayload;
 SS_PING VideoPingPayload;
 uint32_t ControlConnectData;
@@ -205,11 +206,21 @@ static bool parseRtspPortNumberFromUrl(const char* rtspSessionUrl, uint16_t* por
     return true;
 }
 
+static uint16_t sanitizeExternalPort(uint16_t externalPort)
+{
+    if (externalPort == 0 || externalPort <= 5 || externalPort > (uint16_t)(UINT16_MAX - 21)) {
+        return 47989;
+    }
+
+    return externalPort;
+}
+
 // Starts the connection to the streaming machine
 int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION streamConfig, PCONNECTION_LISTENER_CALLBACKS clCallbacks,
     PDECODER_RENDERER_CALLBACKS drCallbacks, PAUDIO_RENDERER_CALLBACKS arCallbacks, void* renderContext, int drFlags,
     void* audioContext, int arFlags) {
     int err;
+    uint16_t defaultRtspPort;
 
     if (drCallbacks != NULL && (drCallbacks->capabilities & CAPABILITY_PULL_RENDERER) && drCallbacks->submitDecodeUnit) {
         Limelog("CAPABILITY_PULL_RENDERER cannot be set with a submitDecodeUnit callback\n");
@@ -267,11 +278,13 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
     VideoPortNumber = 0;
     ControlPortNumber = 0;
     AudioPortNumber = 0;
+    HttpPortNumber = sanitizeExternalPort(serverInfo->externalPort);
+    defaultRtspPort = (uint16_t)(HttpPortNumber + 21);
 
     // Parse RTSP port number from RTSP session URL
     if (!parseRtspPortNumberFromUrl(serverInfo->rtspSessionUrl, &RtspPortNumber)) {
         // Use the well known port if parsing fails
-        RtspPortNumber = 48010;
+        RtspPortNumber = defaultRtspPort;
 
         Limelog("RTSP port: %u (RTSP URL parsing failed)\n", RtspPortNumber);
     }

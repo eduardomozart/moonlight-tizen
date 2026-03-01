@@ -462,6 +462,53 @@ function initIpAddressFields() {
   });
 }
 
+function isValidPort(port) {
+  return Number.isInteger(port) && port > 0 && port <= 65535;
+}
+
+function parseHostAndPortInput(rawInput) {
+  const fallbackHttpPort = 47989;
+  const input = (rawInput || '').trim();
+
+  if (!input) {
+    return { valid: false, error: 'Please enter a valid host address.' };
+  }
+
+  // Supports [IPv6]:port while remaining compatible with hostnames/IPv4.
+  const ipv6PortMatch = input.match(/^\[([^\]]+)\]:(\d{1,5})$/);
+  if (ipv6PortMatch) {
+    const parsedPort = parseInt(ipv6PortMatch[2], 10);
+    if (!isValidPort(parsedPort)) {
+      return { valid: false, error: 'Port must be between 1 and 65535.' };
+    }
+
+    return { valid: true, host: ipv6PortMatch[1], httpPort: parsedPort };
+  }
+
+  const firstColon = input.indexOf(':');
+  const lastColon = input.lastIndexOf(':');
+  if (firstColon > 0 && firstColon === lastColon) {
+    const hostPart = input.substring(0, firstColon).trim();
+    const portPart = input.substring(firstColon + 1).trim();
+
+    if (!hostPart) {
+      return { valid: false, error: 'Please enter a valid host address.' };
+    }
+    if (!/^\d{1,5}$/.test(portPart)) {
+      return { valid: false, error: 'Port must be numeric and between 1 and 65535.' };
+    }
+
+    const parsedPort = parseInt(portPart, 10);
+    if (!isValidPort(parsedPort)) {
+      return { valid: false, error: 'Port must be between 1 and 65535.' };
+    }
+
+    return { valid: true, host: hostPart, httpPort: parsedPort };
+  }
+
+  return { valid: true, host: input, httpPort: fallbackHttpPort };
+}
+
 // If the `Add Host +` is selected on the host grid, then show the 
 // Add Host dialog to enter the connection details for the host PC
 function addHostDialog() {
@@ -503,6 +550,30 @@ function addHostDialog() {
   $('#continueAddHost').off('click');
   $('#continueAddHost').on('click', function() {
     console.log('%c[index.js, addHostDialog]', 'color: green;', 'Adding host, closing app dialog, and returning.');
+    // Get the host value from the selected input mode
+    var inputHost;
+    if ($('#ipAddressFieldModeSwitch').prop('checked')) {
+      var ipAddressField1 = $('#ipAddressField1').val();
+      var ipAddressField2 = $('#ipAddressField2').val();
+      var ipAddressField3 = $('#ipAddressField3').val();
+      var ipAddressField4 = $('#ipAddressField4').val();
+      inputHost = ipAddressField1 + '.' + ipAddressField2 + '.' + ipAddressField3 + '.' + ipAddressField4;
+    } else {
+      inputHost = $('#ipAddressTextInput').val();
+    }
+
+    var parsedHostInput;
+    if ($('#ipAddressFieldModeSwitch').prop('checked')) {
+      // Select fields only provide IP octets, so always use default HTTP port.
+      parsedHostInput = { valid: true, host: inputHost, httpPort: 47989 };
+    } else {
+      parsedHostInput = parseHostAndPortInput(inputHost);
+    }
+    if (!parsedHostInput.valid) {
+      snackbarLog(parsedHostInput.error);
+      return;
+    }
+
     // Disable the Continue button to prevent multiple connection requests
     setTimeout(() => {
       // Add disabled state after 2 seconds
@@ -514,21 +585,12 @@ function addHostDialog() {
         Navigation.switch();
       }, 12000);
     }, 2000);
-    // Get the IP address value from the input field
-    var inputHost;
-    if ($('#ipAddressFieldModeSwitch').prop('checked')) {
-      var ipAddressField1 = $('#ipAddressField1').val();
-      var ipAddressField2 = $('#ipAddressField2').val();
-      var ipAddressField3 = $('#ipAddressField3').val();
-      var ipAddressField4 = $('#ipAddressField4').val();
-      inputHost = ipAddressField1 + '.' + ipAddressField2 + '.' + ipAddressField3 + '.' + ipAddressField4;
-    } else {
-      inputHost = $('#ipAddressTextInput').val();
-    }
+
     // Send a connection request to the Host object based on the given IP address
-    var _nvhttpHost = new NvHTTP(inputHost, myUniqueid, inputHost);
+    var _nvhttpHost = new NvHTTP(parsedHostInput.host, myUniqueid, parsedHostInput.host);
+    _nvhttpHost.httpPort = parsedHostInput.httpPort;
     console.log('%c[index.js, addHostDialog]', 'color: green;', 'Sending connection request to host address ' + _nvhttpHost.hostname);
-    _nvhttpHost.refreshServerInfoAtAddress(inputHost).then(function(success) {
+    _nvhttpHost.refreshServerInfoAtAddress(parsedHostInput.host).then(function(success) {
       snackbarLog('Connecting to ' + _nvhttpHost.hostname + '...');
       // Close the dialog if the user has provided the IP address
       console.log('%c[index.js, addHostDialog]', 'color: green;', 'Closing app dialog and returning.');
@@ -542,6 +604,7 @@ function addHostDialog() {
         // Update the addresses
         hosts[_nvhttpHost.serverUid].address = _nvhttpHost.address;
         hosts[_nvhttpHost.serverUid].userEnteredAddress = _nvhttpHost.userEnteredAddress;
+        hosts[_nvhttpHost.serverUid].httpPort = _nvhttpHost.httpPort;
         // Use the host in the array directly to ensure the PPK propagates after pairing
         pairingDialog(hosts[_nvhttpHost.serverUid], function() {
           saveHosts();
@@ -1039,6 +1102,7 @@ function hostDetailsDialog(host) {
           'MAC Address: ' + (host.macAddress ? host.macAddress : 'NULL') + '<br>' +
           'Pair State: ' + (host.paired ? 'PAIRED' : 'UNPAIRED') + '<br>' +
           'Running Game ID: ' + host.currentGame + '<br>' +
+          'HTTP Port: ' + (host.httpPort ? host.httpPort : 'NULL') + '<br>' +
           'HTTPS Port: ' + (host.httpsPort ? host.httpsPort : 'NULL')
   }).appendTo(hostDetailsDialogContent);
 
@@ -2153,6 +2217,7 @@ function startGame(host, appID) {
 
       console.log('%c[index.js, startGame]', 'color: green;', 'startRequest:' + 
       '\n Host address: ' + host.address + 
+      '\n HTTP port: ' + host.httpPort + 
       '\n Video resolution: ' + streamWidth + 'x' + streamHeight + 
       '\n Video frame rate: ' + frameRate + ' FPS' + 
       '\n Video bitrate: ' + bitrate + ' Kbps' + 
@@ -2209,7 +2274,7 @@ function startGame(host, appID) {
           }
           // Start stream request
           sendMessage('startRequest', [
-            host.address, streamWidth, streamHeight, frameRate, bitrate.toString(), rikey, rikeyid.toString(),
+            host.address, host.httpPort, streamWidth, streamHeight, frameRate, bitrate.toString(), rikey, rikeyid.toString(),
             host.appVersion, host.gfeVersion, $root.find('sessionUrl0').text().trim(), host.serverCodecModeSupport,
             framePacing, optimizeGames, rumbleFeedback, mouseEmulation, flipABfaceButtons, flipXYfaceButtons,
             audioConfig, audioSync, playHostAudio, videoCodec, hdrMode, fullRange, gameMode, disableWarnings,
@@ -2263,7 +2328,7 @@ function startGame(host, appID) {
         }
         // Start stream request
         sendMessage('startRequest', [
-          host.address, streamWidth, streamHeight, frameRate, bitrate.toString(), rikey, rikeyid.toString(),
+          host.address, host.httpPort, streamWidth, streamHeight, frameRate, bitrate.toString(), rikey, rikeyid.toString(),
           host.appVersion, host.gfeVersion, $root.find('sessionUrl0').text().trim(), host.serverCodecModeSupport,
           framePacing, optimizeGames, rumbleFeedback, mouseEmulation, flipABfaceButtons, flipXYfaceButtons,
           audioConfig, audioSync, playHostAudio, videoCodec, hdrMode, fullRange, gameMode, disableWarnings,
@@ -3369,6 +3434,7 @@ function loadHTTPCertsCb() {
         hosts = previousValue.hosts != null ? previousValue.hosts : {};
         for (var hostUID in hosts) { // Programmatically add each new host
           var revivedHost = new NvHTTP(hosts[hostUID].address, myUniqueid, hosts[hostUID].userEnteredAddress, hosts[hostUID].macAddress);
+          revivedHost.httpPort = hosts[hostUID].httpPort || ((hosts[hostUID].httpsPort || 47984) + 5);
           revivedHost.serverUid = hosts[hostUID].serverUid;
           revivedHost.externalIP = hosts[hostUID].externalIP;
           revivedHost.hostname = hosts[hostUID].hostname;
