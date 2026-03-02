@@ -270,7 +270,7 @@ int LiStartConnection(PSERVER_INFORMATION serverInfo, PSTREAM_CONFIGURATION stre
     ControlPortNumber = 0;
     AudioPortNumber = 0;
     HttpPortNumber = serverInfo->externalPort;
-    defaultRtspPort = (uint16_t)(HttpPortNumber + 21);
+    defaultRtspPort = (uint16_t)(HttpPortNumber + 21); // Default: 48010
 
     // Parse RTSP port number from RTSP session URL
     if (!parseRtspPortNumberFromUrl(serverInfo->rtspSessionUrl, &RtspPortNumber)) {
