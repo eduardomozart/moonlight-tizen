@@ -8,7 +8,6 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
 const WASM_ROOT = path.join(REPO_ROOT, 'wasm');
 const LOCALES_DIR = path.join(WASM_ROOT, 'static', 'locales');
 const SOURCE_LOCALE = 'en-US';
-const DEFAULT_TARGET_LOCALES = ['pt-BR'];
 const FILE_EXTENSIONS = new Set(['.js', '.html']);
 const IGNORE_FILES = new Set(['jquery-2.2.0.min.js', 'material.min.js', 'platform.js']);
 
@@ -168,12 +167,13 @@ function main() {
   const sourcePath = path.join(LOCALES_DIR, `${SOURCE_LOCALE}.json`);
   writeJson(sourcePath, sourceDict);
 
-  const localeFiles = fs.readdirSync(LOCALES_DIR)
+  // Directly grab all JSON files in the locales directory (excluding the source locale)
+  const allTargets = fs.readdirSync(LOCALES_DIR)
     .filter((file) => file.endsWith('.json'))
     .map((file) => file.replace('.json', ''))
-    .filter((locale) => locale !== SOURCE_LOCALE);
+    .filter((locale) => locale !== SOURCE_LOCALE)
+    .sort();
 
-  const allTargets = Array.from(new Set([...DEFAULT_TARGET_LOCALES, ...localeFiles])).sort();
   for (const locale of allTargets) {
     syncLocale(locale, sortedKeys, sourceDict);
   }
