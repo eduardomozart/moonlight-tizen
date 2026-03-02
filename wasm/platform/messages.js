@@ -52,7 +52,7 @@ function replaceKnownStageLabels(text) {
     'input stream establishment',
   ];
 
-  let translated = text.replace(/\bstarting\b/gi, t('Starting'));
+  let translated = text.replace(/\bStarting\b/g, t('Starting'));
   stageLabels.forEach((label) => {
     const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     translated = translated.replace(new RegExp(escapedLabel, 'gi'), t(label));
