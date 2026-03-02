@@ -39,6 +39,7 @@ function attachListeners() {
   $('#bitrateSlider').on('input', saveBitrate);
   $('#framePacingSwitch').on('click', saveFramePacing);
   $('#ipAddressFieldModeSwitch').on('click', saveIpAddressFieldMode);
+  $('#ipAddressTextInput').on('input', updateIpAddressInputValidationState);
   $('#sortAppsListSwitch').on('click', saveSortAppsList);
   $('#optimizeGamesSwitch').on('click', saveOptimizeGames);
   $('#removeAllHostsBtn').on('click', deleteAllHostsDialog);
@@ -413,16 +414,23 @@ function handleIpAddressFieldMode() {
   const ipAddressFieldModeSwitch = document.getElementById('ipAddressFieldModeSwitch');
   const ipAddressInputField = document.getElementById('ipAddressInputField');
   const ipAddressSelectFields = document.getElementById('ipAddressSelectFields');
+  const ipAddressInput = document.getElementById('ipAddressTextInput');
+  const textField = ipAddressInput ? ipAddressInput.closest('.mdl-textfield') : null;
 
   // Checks if the IP address field mode switch is checked
   if (ipAddressFieldModeSwitch.checked) {
     // Hides the input field and shows the select field
     ipAddressInputField.style.display = 'none';
     ipAddressSelectFields.style.display = 'block';
+    if (ipAddressInput && textField) {
+      ipAddressInput.setCustomValidity('');
+      textField.classList.remove('is-invalid');
+    }
   } else {
     // Shows the input field and hides the select field
     ipAddressInputField.style.display = 'block';
     ipAddressSelectFields.style.display = 'none';
+    updateIpAddressInputValidationState();
   }
 }
 
@@ -466,23 +474,113 @@ function isValidPort(port) {
   return Number.isInteger(port) && port > 0 && port <= 65535;
 }
 
+function isValidIpv4Address(address) {
+  if (!address) {
+    return false;
+  }
+
+  const octets = address.split('.');
+  if (octets.length !== 4) {
+    return false;
+  }
+
+  for (const octet of octets) {
+    if (!/^\d{1,3}$/.test(octet)) {
+      return false;
+    }
+
+    const octetValue = parseInt(octet, 10);
+    if (octetValue < 0 || octetValue > 255) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isPotentialIpv4AddressWithOptionalPort(rawInput) {
+  const input = (rawInput || '').trim();
+  if (!input) {
+    return true;
+  }
+
+  const rawParts = input.split(':');
+  if (rawParts.length > 2) {
+    return false;
+  }
+
+  const hostPart = rawParts[0];
+  const portPart = rawParts.length === 2 ? rawParts[1] : null;
+
+  if (!/^\d{0,3}(\.\d{0,3}){0,3}$/.test(hostPart)) {
+    return false;
+  }
+
+  const octets = hostPart.split('.');
+  if (octets.length > 4) {
+    return false;
+  }
+
+  for (const octet of octets) {
+    if (!octet) {
+      continue;
+    }
+
+    const octetValue = parseInt(octet, 10);
+    if (octetValue < 0 || octetValue > 255) {
+      return false;
+    }
+  }
+
+  if (portPart != null) {
+    if (!/^\d{0,5}$/.test(portPart)) {
+      return false;
+    }
+
+    if (portPart.length > 0) {
+      const parsedPort = parseInt(portPart, 10);
+      if (!isValidPort(parsedPort)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function updateIpAddressInputValidationState() {
+  const ipAddressInput = document.getElementById('ipAddressTextInput');
+  const textField = ipAddressInput ? ipAddressInput.closest('.mdl-textfield') : null;
+  const usingSelectFields = $('#ipAddressFieldModeSwitch').prop('checked');
+
+  if (!ipAddressInput || !textField || usingSelectFields) {
+    return;
+  }
+
+  const inputValue = ipAddressInput.value;
+  const isPotentialValue = isPotentialIpv4AddressWithOptionalPort(inputValue);
+
+  if (!inputValue.trim()) {
+    ipAddressInput.setCustomValidity('');
+    textField.classList.remove('is-invalid');
+    return;
+  }
+
+  if (isPotentialValue) {
+    ipAddressInput.setCustomValidity('');
+    textField.classList.remove('is-invalid');
+  } else {
+    ipAddressInput.setCustomValidity('invalid-host');
+    textField.classList.add('is-invalid');
+  }
+}
+
 function parseHostAndPortInput(rawInput) {
   const fallbackHttpPort = 47989;
   const input = (rawInput || '').trim();
 
   if (!input) {
     return { valid: false, error: 'Please enter a valid host address.' };
-  }
-
-  // Supports [IPv6]:port while remaining compatible with hostnames/IPv4.
-  const ipv6PortMatch = input.match(/^\[([^\]]+)\]:(\d{1,5})$/);
-  if (ipv6PortMatch) {
-    const parsedPort = parseInt(ipv6PortMatch[2], 10);
-    if (!isValidPort(parsedPort)) {
-      return { valid: false, error: 'Port must be between 1 and 65535.' };
-    }
-
-    return { valid: true, host: ipv6PortMatch[1], httpPort: parsedPort };
   }
 
   const firstColon = input.indexOf(':');
@@ -494,6 +592,9 @@ function parseHostAndPortInput(rawInput) {
     if (!hostPart) {
       return { valid: false, error: 'Please enter a valid host address.' };
     }
+    if (!isValidIpv4Address(hostPart)) {
+      return { valid: false, error: 'Host must be a valid IPv4 address.' };
+    }
     if (!/^\d{1,5}$/.test(portPart)) {
       return { valid: false, error: 'Port must be numeric and between 1 and 65535.' };
     }
@@ -504,6 +605,10 @@ function parseHostAndPortInput(rawInput) {
     }
 
     return { valid: true, host: hostPart, httpPort: parsedPort };
+  }
+
+  if (!isValidIpv4Address(input)) {
+    return { valid: false, error: 'Host must be a valid IPv4 address.' };
   }
 
   return { valid: true, host: input, httpPort: fallbackHttpPort };
@@ -519,6 +624,7 @@ function addHostDialog() {
   // Show the dialog and push the view
   addHostOverlay.style.display = 'flex';
   addHostDialog.showModal();
+  updateIpAddressInputValidationState();
   isDialogOpen = true;
   Navigation.push(Views.AddHostDialog);
 
@@ -543,6 +649,7 @@ function addHostDialog() {
     $('#continueAddHost').removeClass('mdl-button--disabled').prop('disabled', false);
     // Clear the input field after canceling the operation
     $('#ipAddressTextInput').val('');
+    updateIpAddressInputValidationState();
     initIpAddressFields();
   });
 
@@ -621,6 +728,7 @@ function addHostDialog() {
       $('#continueAddHost').removeClass('mdl-button--disabled').prop('disabled', false);
       // Clear the input field after successful processing
       $('#ipAddressTextInput').val('');
+      updateIpAddressInputValidationState();
       initIpAddressFields();
     }.bind(this), function(failure) {
       console.error('%c[index.js, addHostDialog]', 'color: green;', 'Error: Failed API object:\n', _nvhttpHost, '\n' + _nvhttpHost.toString()); // Logging both object (for console) and toString-ed object (for text logs)
@@ -629,6 +737,7 @@ function addHostDialog() {
       $('#continueAddHost').removeClass('mdl-button--disabled').prop('disabled', false);
       // Clear the input field after failure processing
       $('#ipAddressTextInput').val('');
+      updateIpAddressInputValidationState();
       initIpAddressFields();
     }.bind(this));
   });
@@ -3435,6 +3544,8 @@ function loadHTTPCertsCb() {
         for (var hostUID in hosts) { // Programmatically add each new host
           var revivedHost = new NvHTTP(hosts[hostUID].address, myUniqueid, hosts[hostUID].userEnteredAddress, hosts[hostUID].macAddress);
           revivedHost.httpPort = hosts[hostUID].httpPort || ((hosts[hostUID].httpsPort || 47984) + 5);
+          revivedHost.httpsPort = hosts[hostUID].httpsPort || (revivedHost.httpPort - 5);
+          revivedHost.externalPort = hosts[hostUID].externalPort || 0;
           revivedHost.serverUid = hosts[hostUID].serverUid;
           revivedHost.externalIP = hosts[hostUID].externalIP;
           revivedHost.hostname = hosts[hostUID].hostname;
