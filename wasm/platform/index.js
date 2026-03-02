@@ -3545,7 +3545,7 @@ function loadHTTPCertsCb() {
           var revivedHost = new NvHTTP(hosts[hostUID].address, myUniqueid, hosts[hostUID].userEnteredAddress, hosts[hostUID].macAddress);
           revivedHost.httpPort = hosts[hostUID].httpPort || ((hosts[hostUID].httpsPort || 47984) + 5);
           revivedHost.httpsPort = hosts[hostUID].httpsPort || (revivedHost.httpPort - 5);
-          revivedHost.externalPort = hosts[hostUID].externalPort || 0;
+          revivedHost.externalPort = hosts[hostUID].externalPort || revivedHost.httpPort;
           revivedHost.serverUid = hosts[hostUID].serverUid;
           revivedHost.externalIP = hosts[hostUID].externalIP;
           revivedHost.hostname = hosts[hostUID].hostname;
