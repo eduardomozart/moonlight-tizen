@@ -3085,14 +3085,14 @@ function loadSystemInfo() {
 
     // Insert the system information into the placeholder
     systemInfoPlaceholder.innerText =
-      'App Name: ' + (appName.name ? appName.name : 'Unknown') + ' Game Streaming' + '\n' +
-      'App Version: ' + (appVer.version ? appVer.version : 'Unknown') + '\n' +
-      'Platform Version: Tizen ' + (platformVer ? platformVer : 'Unknown') + '\n' +
-      'TV Model Name: ' + (tvModelName ? tvModelName : 'Unknown') + '\n' +
-      'TV Model Full Name: ' + (tvModelFullName ? tvModelFullName : 'Unknown') + '\n' +
-      'TV Model Code: ' + (tvModelCode ? tvModelCode : 'Unknown') + '\n' +
-      '4K Panel: ' + (is4kPanelSupported ? 'Supported' : 'Unsupported') + '\n' +
-      'HDR Capability: ' + (isHdrCapabilitySupported ? 'Supported' : 'Unsupported');
+      t('App Name: %1$s %2$s', appName.name ? appName.name : t('Unknown'), t('Game Streaming')) + '\n' +
+      t('App Version: %1$s', appVer.version ? appVer.version : t('Unknown')) + '\n' +
+      t('Platform Version: Tizen %1$s', platformVer ? platformVer : t('Unknown')) + '\n' +
+      t('TV Model Name: %1$s', tvModelName ? tvModelName : t('Unknown')) + '\n' +
+      t('TV Model Full Name: %1$s', tvModelFullName ? tvModelFullName : t('Unknown')) + '\n' +
+      t('TV Model Code: %1$s', tvModelCode ? tvModelCode : t('Unknown')) + '\n' +
+      t('4K Panel: %1$s', is4kPanelSupported ? t('Supported') : t('Unsupported')) + '\n' +
+      t('HDR Capability: %1$s', isHdrCapabilitySupported ? t('Supported') : t('Unsupported'));
   } else {
     console.error('%c[index.js, loadSystemInfo]', 'color: green;', 'Error: Failed to load system information!');
     systemInfoPlaceholder.innerText = t('Failed to load system information!');
@@ -3116,6 +3116,10 @@ function loadUserDataCb() {
       window.i18n.applyLanguagePreference(savedLanguagePreference).catch((error) => {
         console.warn('%c[index.js, loadUserDataCb]', 'color: green;', 'Warning: failed to apply stored language: ' + error);
       });
+    }
+    // Register loadSystemInfo to re-run every time the language changes
+    if (window.i18n && typeof window.i18n.onRefresh === 'function') {
+      window.i18n.onRefresh(loadSystemInfo);
     }
   });
 

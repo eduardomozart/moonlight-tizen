@@ -16,6 +16,7 @@
     dictionary: {},
     sourceDictionary: {},
     initialized: false,
+    refreshCallbacks: [],
   };
 
   function formatPositional(template, values) {
@@ -195,6 +196,7 @@
     });
 
     updateLocalizedSelections();
+    state.refreshCallbacks.forEach((cb) => cb());
   }
 
   function populateLanguageMenu(onSelect) {
@@ -288,6 +290,7 @@
     getPreference: () => state.localePreference,
     getLocale: () => state.effectiveLocale,
     getSupportedLocales: () => SUPPORTED_LOCALES.slice(),
+    onRefresh: (cb) => { state.refreshCallbacks.push(cb); },
   };
 
   global.t = t;
