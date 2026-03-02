@@ -58,7 +58,6 @@ RUN echo 'JAVA = "/usr/bin/java"' >> /home/moonlight/.emscripten
 # Compile the source code and prepare the widget directory
 WORKDIR /home/moonlight
 COPY --chown=moonlight . ./moonlight-tizen
-
 RUN cmake \
 	-DCMAKE_TOOLCHAIN_FILE=/home/moonlight/emscripten-release-bundle/emsdk/fastcomp/emscripten/cmake/Modules/Platform/Emscripten.cmake \
 	-G Ninja \
