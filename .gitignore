@@ -50,3 +50,4 @@ dir.stamp
 # Visual Studio
 *.vs/
 *.vscode/
+.DS_Store
