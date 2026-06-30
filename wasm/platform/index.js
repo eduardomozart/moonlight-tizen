@@ -360,37 +360,87 @@ function restoreUiAfterWasmLoad() {
   // Set focus to current item and/or scroll to the current host row
   setTimeout(() => Navigation.switch(), 100);
 
-  // Find mDNS host discovered using ServiceFinder (network service discovery)
-  // findNvService(function(finder, opt_error) {
-  //   if (finder.byService_['_nvstream._tcp']) {
-  //     var ips = Object.keys(finder.byService_['_nvstream._tcp']);
-  //     for (var i in ips) {
-  //       var ip = ips[i];
-  //       if (finder.byService_['_nvstream._tcp'][ip]) {
-  //         var mDnsDiscoveredHost = new NvHTTP(ip, myUniqueid);
-  //         mDnsDiscoveredHost.pollServer(function(returnedDiscoveredHost) {
-  //           // Just drop this if the host doesn't respond
-  //           if (!returnedDiscoveredHost.online) {
-  //             return;
-  //           }
-  //           if (hosts[returnedDiscoveredHost.serverUid] != null) {
-  //             // If we're seeing a host we've already seen before, update it for the current local IP
-  //             hosts[returnedDiscoveredHost.serverUid].address = returnedDiscoveredHost.address;
-  //             hosts[returnedDiscoveredHost.serverUid].updateExternalAddressIP4();
-  //           } else {
-  //             // Host must be in the grid before starting background polling
-  //             addHostToGrid(returnedDiscoveredHost, true);
-  //             beginBackgroundPollingOfHost(returnedDiscoveredHost);
-  //           }
-  //           saveHosts();
-  //         });
-  //       }
-  //     }
-  //   }
-  // });
+  // Find mDNS host discovered using Native Service (network service discovery)
+  findNvService(function(finder, opt_error) {
+    if (opt_error) {
+      console.error("mDNS Error:", opt_error);
+      return;
+    }
+    if (finder.byService_['_nvstream._tcp']) {
+      var ips = Object.keys(finder.byService_['_nvstream._tcp']);
+      for (var i in ips) {
+        var ip = ips[i];
+        if (finder.byService_['_nvstream._tcp'][ip]) {
+          var mDnsDiscoveredHost = new NvHTTP(ip, myUniqueid);
+          mDnsDiscoveredHost.pollServer(function(returnedDiscoveredHost) {
+            // Just drop this if the host doesn't respond
+            if (!returnedDiscoveredHost.online) {
+              return;
+            }
+            if (hosts[returnedDiscoveredHost.serverUid] != null) {
+              // If we're seeing a host we've already seen before, update it for the current local IP
+              hosts[returnedDiscoveredHost.serverUid].address = returnedDiscoveredHost.address;
+              hosts[returnedDiscoveredHost.serverUid].updateExternalAddressIP4();
+            } else {
+              // Host must be in the grid before starting background polling
+              addHostToGrid(returnedDiscoveredHost, true);
+              beginBackgroundPollingOfHost(returnedDiscoveredHost);
+            }
+            saveHosts();
+          });
+        }
+      }
+    }
+  });
 
   // Automatically check for a new update after 10 seconds delay at application startup once every 24 hours
   setTimeout(() => checkForAppUpdatesAtStartup(), 10000);
+}
+
+function findNvService(callback) {
+    try {
+        var localMessagePort = tizen.messageport.requestLocalMessagePort("MdnsResponsePort");
+        var finder = { byService_: { '_nvstream._tcp': {} } };
+
+        localMessagePort.addMessagePortListener(function(data, remotePort) {
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].key === 'ip') {
+                    var ip = data[i].value;
+                    console.log('mDNS Discovered IP: ' + ip);
+                    // Mock the structure expected by the callback
+                    finder.byService_['_nvstream._tcp'][ip] = true;
+                    // Invoke the callback with the mocked finder
+                    callback(finder, null);
+                }
+            }
+        });
+
+        var requestSearch = function() {
+            try {
+                var remoteMessagePort = tizen.messageport.requestRemoteMessagePort(
+                    "MoonLightS.MdnsService",  // App ID
+                    "MdnsRequestPort"          // Port name
+                );
+                remoteMessagePort.sendMessage([{key: "cmd", value: "search"}]);
+                console.log("mDNS search request sent successfully to Native Service.");
+            } catch (e) {
+                callback(null, "Failed to request mDNS search: " + e.message);
+            }
+        };
+
+        // We must launch the Native Service first because requestRemoteMessagePort does not start it automatically
+        tizen.application.launch("MoonLightS.MdnsService", function() {
+            console.log("Native mDNS Service launched successfully.");
+            // Give the service a brief moment to register its MessagePort
+            setTimeout(requestSearch, 500);
+        }, function(err) {
+            console.warn("Native mDNS Service launch returned an error (it might already be running): " + err.message);
+            // Attempt to connect anyway in case it was already running
+            requestSearch();
+        });
+    } catch (e) {
+        callback(null, "Failed to initialize mDNS search: " + e.message);
+    }
 }
 
 function hostChosen(host) {
