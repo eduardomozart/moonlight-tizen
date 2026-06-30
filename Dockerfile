@@ -131,9 +131,9 @@ RUN tizen build-native -C Release -a arm -c gcc -r mobile-6.0-device.core -- Mdn
 # Create package directory
 RUN BIN=$(find MdnsService -type f -executable -iname "*mdnsservice*" | head -1) && \
     if [ -z "$BIN" ]; then echo "Binary not found"; exit 1; fi && \
-    mkdir -p MdnsService/package/bin && \
-    cp "$BIN" MdnsService/package/bin/mdns_service && \
-    chmod +x MdnsService/package/bin/mdns_service && \
+    mkdir -p MdnsService/package && \
+    cp "$BIN" MdnsService/package/mdns_service && \
+    chmod +x MdnsService/package/mdns_service && \
     cp MdnsService/tizen-manifest.xml MdnsService/package/
 
 # Sign and package the Native Service into a TPK file using Expect
