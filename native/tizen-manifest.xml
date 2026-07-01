@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<manifest xmlns="http://tizen.org/ns/packages" api-version="5.5" package="MoonLightS" version="1.0.0">
+<manifest xmlns="http://tizen.org/ns/packages" api-version="5.5" package="MoonMdnsSv" version="1.0.0">
     <profile name="tv-samsung"/>
-    <service-application appid="MoonLightS.MdnsService" exec="mdns_service" type="capp" multiple="false" taskmanage="false" nodisplay="true">
+    <service-application appid="MoonMdnsSv.MdnsService" exec="mdns_service" type="capp" multiple="false" taskmanage="false" nodisplay="true">
         <label>Moonlight mDNS Service</label>
         <background-category value="iot-communication"/>
     </service-application>

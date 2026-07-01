@@ -163,6 +163,7 @@ RUN echo \
 	'expect eof\n' \
 | expect
 RUN mv build/widget/Moonlight.wgt .
+RUN cp MdnsService/package/*.tpk .
 
 # Clean up unnecessary files to reduce image size
 RUN rm -rf \
