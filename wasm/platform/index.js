@@ -1,5 +1,6 @@
 // Initialize global variables and constants
 var appInfo = tizen.application.getAppInfo(); // Retrieve the application information
+var isForceGMVariant = checkForceGMVariant(); // Check if the currently installed app is the ForceGM variant
 var platformVer = tizen.systeminfo.getCapability("http://tizen.org/feature/platform.version"); // Retrieve the device platform version
 var modelSeries = webapis.productinfo.getModel(); // Retrieve the device model series
 var modelName = webapis.productinfo.getRealModel(); // Retrieve the device model name
@@ -58,6 +59,7 @@ const REPEAT_INTERVAL = 100; // Repeat interval set to 100ms (milliseconds)
 const ACTION_THRESHOLD = 0.5; // Threshold for initial navigation set to 0.5
 const NAVIGATION_DELAY = 150; // Navigation delay set to 150ms (milliseconds)
 const UPDATE_TIMESTAMP = 'lastUpdateCheck'; // Use the update check timestamp key to determine the last update check
+const UPDATE_VERSION = 'latestUpdateVersion'; // Key to cache the latest found version
 const UPDATE_INTERVAL = 24 * 60 * 60 * 1000; // Automatic check for updates interval is set to 24 hours
 
 // Called by the common.js module
@@ -1635,10 +1637,10 @@ function navigationGuideDialog() {
   });
 }
 
-// Fetch the latest version and release notes from GitHub API
+// Fetch the latest version, release notes, and .wgt URL from GitHub API
 function fetchLatestRelease() {
   // GitHub API endpoint to get the latest released version
-  const repoOwner = 'brightcraft';
+  const repoOwner = 'eduardomozart';
   const repoName = 'moonlight-tizen';
   const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`;
 
@@ -1653,7 +1655,23 @@ function fetchLatestRelease() {
     // Get the latest version and release notes from the released update
     let latestVersion = data.tag_name.startsWith('v') ? data.tag_name.slice(1) : data.tag_name;
     const releaseNotes = extractReleaseNotes(data.body) || t('• No relevant changes found.');
-    return { latestVersion, releaseNotes };
+    let wgtUrl = null;
+    if (data.assets) {
+      let targetAsset;
+      if (isForceGMVariant) {
+        // Prioritize the ForceGM package, fallback to standard if missing
+        targetAsset = data.assets.find(a => a.name.endsWith('.wgt') && a.name.includes('ForceGM')) ||
+                      data.assets.find(a => a.name.endsWith('.wgt') && !a.name.includes('ForceGM'));
+      } else {
+        // Find the standard package (excluding ForceGM)
+        targetAsset = data.assets.find(a => a.name.endsWith('.wgt') && !a.name.includes('ForceGM'));
+      }
+      
+      if (targetAsset) {
+        wgtUrl = targetAsset.browser_download_url;
+      }
+    }
+    return { latestVersion, releaseNotes, wgtUrl };
   });
 }
 
@@ -1712,6 +1730,9 @@ function formatUpdateTimestamp(ms) {
 
 // Show the Update App button when a new update is found
 function updateAppButton(latestVersion) {
+  // Prevent adding duplicate buttons if one already exists
+  if ($('#updateAppBtn').length > 0) return;
+  
   // Create the button dynamically
   var updateAppBtn = $('<button>', {
     type: 'button',
@@ -1764,12 +1785,12 @@ function updateAppButton(latestVersion) {
   updateAppBtn.on('click', function() {
     console.log('%c[index.js, updateAppButton]', 'color: green;', 'Checking for new update release notes...');
     // Fetch the latest release data from the GitHub API
-    fetchLatestRelease().then(({ latestVersion, releaseNotes }) => {
+    fetchLatestRelease().then(({ latestVersion, releaseNotes, wgtUrl }) => {
       setTimeout(() => {
         // Check if a new version update is available
         if (checkVersionUpdate(appInfo.version, latestVersion)) {
           // Show the Update Moonlight dialog with new version and release notes to inform user to update the app
-          updateAppDialog(latestVersion, releaseNotes);
+          updateAppDialog(latestVersion, releaseNotes, wgtUrl);
         }
       }, 500);
     }).catch(error => {
@@ -1780,77 +1801,305 @@ function updateAppButton(latestVersion) {
 }
 
 // Show the Update Moonlight dialog
-function updateAppDialog(latestVersion, releaseNotes) {
-  // Create an overlay for the dialog and append it to the body
-  var updateAppDialogOverlay = $('<div>', {
-    id: 'updateAppDialogOverlay',
-    class: 'dialog-overlay'
-  }).appendTo(document.body);
+function updateAppDialog(latestVersion, releaseNotes, wgtUrl) {
+  // Find the existing overlay and dialog elements
+  var updateAppDialogOverlay = document.querySelector('#updateAppDialogOverlay');
+  var updateAppDialog = document.querySelector('#updateAppDialog');
 
-  // Create the dialog element and append it to the overlay
-  var updateAppDialog = $('<dialog>', {
-    id: 'updateAppDialog',
-    class: 'mdl-dialog'
-  }).appendTo(updateAppDialogOverlay);
+  // Reset the dialog title
+  $('#updateAppDialogTitle').text(t('Update Moonlight'));
 
-  // Add a dialog title named Update Moonlight
-  $('<h3>', {
-    id: 'updateAppDialogTitle',
-    class: 'mdl-dialog__title',
-    'data-i18n': 'Update Moonlight',
-    text: t('Update Moonlight')
-  }).appendTo(updateAppDialog);
+  // Update the text dynamically
+  $('#updateAppDialogText').html(
+    t('Version %1$s is now available! Update to enjoy new features and improvements.', latestVersion) + '<br><br>' +
+    '<strong>' + t('What\'s Changed:') + '</strong><br>' + releaseNotes
+  );
+  
+  // Set up the Update Now button
+  var updateNowBtn = $('#updateNowAppBtn');
+  if (wgtUrl) {
+    updateNowBtn.show();
+    updateNowBtn.prop('disabled', false);
+    updateNowBtn.text(t('Update Now'));
+    updateNowBtn.off('click').click(function() {
+      console.log('%c[index.js, updateAppDialog]', 'color: green;', 'Starting download of new update...');
+      downloadAndUpdateApp(wgtUrl);
+    });
+  } else {
+    updateNowBtn.hide();
+  }
 
-  // Create a content section inside the dialog
-  var updateAppDialogContent = $('<div>', {
-    class: 'mdl-dialog__content'
-  }).appendTo(updateAppDialog);
-
-  // Add a paragraph with multiple lines of text
-  $('<p>', {
-    id: 'updateAppDialogText',
-    class: 'update-app-text',
-    html: t('Version %1$s is now available! Update manually to enjoy new features and improvements.<br><br>', latestVersion) + 
-          t('<strong>What\'s Changed:</strong><br>%1$s', releaseNotes)
-  }).appendTo(updateAppDialogContent);
-
-  // Create the actions section inside the dialog
-  var updateAppDialogActions = $('<div>', {
-    class: 'mdl-dialog__actions'
-  }).appendTo(updateAppDialog);
-
-  // Create and set up the Close button
-  var closeUpdateAppDialog = $('<button>', {
-    type: 'button',
-    id: 'closeUpdateApp',
-    class: 'mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect',
-    'data-i18n': 'Close',
-    text: t('Close')
-  });
-
-  // Close the dialog if the Close button is pressed
-  closeUpdateAppDialog.off('click');
-  closeUpdateAppDialog.click(function() {
+  // Set up the Close button
+  var closeUpdateAppDialog = $('#closeUpdateApp');
+  closeUpdateAppDialog.text(t('Close'));
+  closeUpdateAppDialog.off('click').click(function() {
     console.log('%c[index.js, updateAppDialog]', 'color: green;', 'Closing app dialog and returning.');
-    $(updateAppDialogOverlay).css('display', 'none');
-    updateAppDialog[0].close();
-    updateAppDialogOverlay.remove();
+    updateAppDialogOverlay.style.display = 'none';
+    updateAppDialog.close();
     isDialogOpen = false;
     Navigation.pop();
     Navigation.switch();
-  }).appendTo(updateAppDialogActions);
+  });
 
   // If the dialog element doesn't support the showModal method, register it with dialogPolyfill
-  if (!updateAppDialog[0].showModal) {
-    dialogPolyfill.registerDialog(updateAppDialog[0]);
+  if (!updateAppDialog.showModal) {
+    dialogPolyfill.registerDialog(updateAppDialog);
   }
 
   // Show the dialog and push the view
-  $(updateAppDialogOverlay).css('display', 'flex');
-  updateAppDialog[0].showModal();
+  updateAppDialogOverlay.style.display = 'flex';
+  updateAppDialog.showModal();
   isDialogOpen = true;
   Navigation.push(Views.UpdateMoonlightDialog);
   setTimeout(() => Navigation.switch(), 5);
+}
+
+async function downloadAndUpdateApp(wgtUrl) {
+  let isCancelled = false;
+  const abortController = new AbortController();
+
+  $('#updateNowAppBtn').hide();
+  
+  $('#closeUpdateApp').text(t('Cancel')).prop('disabled', false).off('click').click(function() {
+    console.log('%c[index.js, downloadAndUpdateApp]', 'color: green;', 'Cancelling download/probe.');
+    isCancelled = true;
+    abortController.abort();
+    $('#updateAppDialogOverlay').hide();
+    document.querySelector('#updateAppDialog').close();
+    isDialogOpen = false;
+    Navigation.pop();
+    Navigation.switch();
+  });
+
+  function translateUpdateErrorMsg(errorMsg) {
+    if (!errorMsg) return errorMsg;
+    
+    // Explicitly declare C++ error strings for the i18n-sync parser
+    const knownErrors = [
+      t('Failed to create socket for SDB connection'),
+      t('Failed to connect to local SDB daemon on port 26101'),
+      t('Failed to send SDB handshake'),
+      t('SDB daemon requires RSA authentication. Please use Tizen Studio to deploy instead.'),
+      t('SDB daemon rejected handshake.'),
+      t('Failed to send OPEN command to SDB shell'),
+      t('Installation failed without providing an error log.')
+    ];
+
+    const syncPrefix = 'Failed to connect for sync: ';
+    const pushPrefix = 'Failed to push update to Tizen system temp folder: ';
+
+    if (errorMsg.startsWith(syncPrefix)) {
+      // t('Failed to connect for sync: %1$s')
+      return t('Failed to connect for sync: %1$s', translateUpdateErrorMsg(errorMsg.substring(syncPrefix.length)));
+    } else if (errorMsg.startsWith(pushPrefix)) {
+      // t('Failed to push update to Tizen system temp folder: %1$s')
+      return t('Failed to push update to Tizen system temp folder: %1$s', translateUpdateErrorMsg(errorMsg.substring(pushPrefix.length)));
+    }
+
+    // Since we are checking exact matches, we can use the English array to look up the translated array.
+    const englishErrors = [
+      'Failed to create socket for SDB connection',
+      'Failed to connect to local SDB daemon on port 26101',
+      'Failed to send SDB handshake',
+      'SDB daemon requires RSA authentication. Please use Tizen Studio to deploy instead.',
+      'SDB daemon rejected handshake.',
+      'Failed to send OPEN command to SDB shell',
+      'Installation failed without providing an error log.'
+    ];
+
+    const idx = englishErrors.indexOf(errorMsg);
+    if (idx !== -1) {
+      return knownErrors[idx];
+    }
+
+    // Return the raw error message (like the shell output from vd_appinstall) if no known error matched
+    return errorMsg;
+  }
+
+  function showUpdateFailed(reason, description, customTitle) {
+    if (isCancelled) return;
+    
+    $('#updateNowAppBtn').hide();
+    
+    $('#closeUpdateApp').show().text(t('Close')).prop('disabled', false).off('click').click(function() {
+      $('#updateAppDialogOverlay').hide();
+      document.querySelector('#updateAppDialog').close();
+      isDialogOpen = false;
+      Navigation.pop();
+      Navigation.switch();
+    });
+    
+    $('#updateAppDialogTitle').text(customTitle ? customTitle : t('Moonlight Update Failed'));
+    
+    let reasonHtml = reason;
+    if (description) {
+      if (description.startsWith('<div')) {
+        reasonHtml += '<br><br>' + description;
+      } else {
+        reasonHtml += '<br><br>' + description;
+      }
+    }
+    $('#updateAppDialogText').html(reasonHtml);
+
+    const errLog = document.getElementById('sdbErrorLog');
+    if (errLog) {
+      errLog.scrollTop = errLog.scrollHeight;
+    }
+
+    Views.UpdateMoonlightDialog.view.index = Views.UpdateMoonlightDialog.view.func().indexOf('closeUpdateApp');
+    Navigation.switch();
+  }
+
+  // Ensure focus is squarely on the Cancel button
+  Views.UpdateMoonlightDialog.view.index = Views.UpdateMoonlightDialog.view.func().indexOf('closeUpdateApp');
+  Navigation.switch();
+
+  try {
+    // Step 1: Download the .wgt payload
+    $('#updateAppDialogTitle').text(t('Downloading Update'));
+    $('#updateAppDialogText').html(t('Downloading update... Please wait.'));
+
+    const response = await fetch(wgtUrl, { signal: abortController.signal });
+    if (!response.ok) throw new Error('Failed to download update');
+    const buffer = await response.arrayBuffer();
+
+    if (isCancelled) return;
+
+    // Step 2: Validate Author Certificate
+    $('#updateAppDialogTitle').text(t('Validating Update'));
+    $('#updateAppDialogText').html(t('Verifying author certificate signatures...'));
+
+    let downloadedSignature = null;
+    let localSignature = null;
+
+    try {
+      // Use JSZip to extract the signature from the downloaded zip
+      if (typeof JSZip !== 'undefined') {
+        const zip = await JSZip.loadAsync(buffer);
+        const sigFile = zip.file("author-signature.xml");
+        if (sigFile) {
+          downloadedSignature = await sigFile.async("string");
+        } else {
+          console.warn('%c[index.js, downloadAndUpdateApp]', 'color: orange;', 'No author-signature.xml found in the downloaded update!');
+        }
+      } else {
+        console.warn('%c[index.js, downloadAndUpdateApp]', 'color: orange;', 'JSZip is not available. Skipping signature validation!');
+      }
+    } catch (e) {
+      console.warn('%c[index.js, downloadAndUpdateApp]', 'color: orange;', 'Failed to extract signature from downloaded update:', e);
+    }
+
+    try {
+      // Fetch the currently installed signature
+      const localResponse = await fetch('author-signature.xml', { signal: abortController.signal });
+      if (localResponse.ok) {
+        localSignature = await localResponse.text();
+      }
+    } catch (e) {
+      console.warn('%c[index.js, downloadAndUpdateApp]', 'color: orange;', 'Failed to read local author-signature.xml:', e);
+    }
+
+    if (isCancelled) return;
+
+    // Strict validation: extract the X509Certificate from both XMLs.
+    // The XMLDSig hashes will naturally differ between versions, but the author's signing certificate must match.
+    if (downloadedSignature && localSignature) {
+      const extractCert = (xmlStr) => {
+        const match = xmlStr.match(/<X509Certificate>\s*([^<]+)\s*<\/X509Certificate>/);
+        return match ? match[1].trim() : null;
+      };
+
+      const downloadedCert = extractCert(downloadedSignature);
+      const localCert = extractCert(localSignature);
+
+      if (downloadedCert && localCert && downloadedCert !== localCert) {
+        console.error('%c[index.js, showUpdateFailed]', 'color: red;', 'Update failed: Author certificate mismatch!');
+        showUpdateFailed(
+          t('The downloaded update is signed with a different author certificate than the currently installed app. Tizen strictly prohibits in-place updates across different certificates to protect your data.'),
+          t('To apply this update, you must update the app manually using a PC (via Apps2Samsung or Tizen Studio).'),
+          t('Author certificate mismatch!')
+        );
+        return;
+      }
+    }
+
+    // Step 3: Probe SDB connection
+    $('#updateAppDialogTitle').text(t('Probing Connection'));
+    $('#updateAppDialogText').html(t('Verifying connection to Tizen Developer Mode SDB daemon...'));
+
+    try {
+      await sendMessage('probeSdbConnection', []);
+    } catch (errorMsg) {
+      if (isCancelled) return;
+      console.error('%c[index.js, showUpdateFailed]', 'color: red;', 'Update failed: ' + errorMsg);
+      showUpdateFailed(
+        translateUpdateErrorMsg(errorMsg),
+        t('To proceed, your TV must have Developer Mode enabled with the Host IP set to 127.0.0.1.')
+      );
+      return;
+    }
+
+    if (isCancelled) return;
+
+    // Step 4: Prepare binary payload for C++
+    $('#updateAppDialogTitle').text(t('Processing Update'));
+    $('#updateAppDialogText').html(t('Preparing binary payload for installation...'));
+
+    const uint8Array = new Uint8Array(buffer);
+
+    if (isCancelled) return;
+    
+    const appId = tizen.application.getCurrentApplication().appInfo.id;
+
+    $('#updateAppDialogTitle').text(t('Update Ready'));
+    $('#updateAppDialogText').html(t('The update has been downloaded. The app will close during installation.'));
+    
+    // Hide the cancel button temporarily to break the spatial navigation focus chain
+    $('#closeUpdateApp').hide();
+
+    // Show the Restart Moonlight button and stack it vertically
+    $('#updateNowAppBtn')
+      .show()
+      .css({ 'display': 'block', 'width': '100%', 'margin-bottom': '10px' })
+      .text(t('Restart Moonlight'))
+      .prop('disabled', false)
+      .off('click')
+      .click(async function() {
+        $(this).prop('disabled', true);
+        $('#closeUpdateApp').prop('disabled', true);
+        
+        // Yield to the browser rendering loop so the buttons visually disable before WASM execution blocks the thread
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        try {
+          await sendMessage('triggerUpdate', [appId, uint8Array]);
+          if (isCancelled) return;
+          $('#updateAppDialogText').html(t('Update initiated! The app should close automatically.'));
+        } catch (errorMsg) {
+          if (isCancelled) return;
+          console.error('%c[index.js, showUpdateFailed]', 'color: red;', 'Update failed: Installation failed. The package may be invalid or rejected by Tizen.');
+          showUpdateFailed(
+            t('Installation failed. The package may be invalid or rejected by Tizen.'),
+            '<div id="sdbErrorLog" style="max-height: 200px; overflow-y: auto; text-align: left; background-color: #404354; color: #ececec; padding: 15px; border-radius: 8px; font-family: monospace; white-space: pre-wrap; font-size: 1.1rem; line-height: 1.5;">' + translateUpdateErrorMsg(errorMsg) + '</div>'
+          );
+        }
+      });
+
+    // Move focus to Restart Moonlight while Cancel is hidden (prevents sliding animation)
+    Views.UpdateMoonlightDialog.view.index = Views.UpdateMoonlightDialog.view.func().indexOf('updateNowAppBtn');
+    Navigation.switch();
+
+    // Restore the Cancel button asynchronously so it pops in AFTER focus is set
+    setTimeout(() => {
+      if (isCancelled) return;
+      $('#closeUpdateApp').css({ 'display': 'block', 'width': '100%' }).show();
+    }, 50);
+
+  } catch (error) {
+    if (isCancelled) return;
+    console.error('%c[index.js, showUpdateFailed]', 'color: red;', 'Update failed: Failed to download or process the update payload. ' + error);
+    showUpdateFailed(t('Failed to download or process the update payload.'));
+  }
 }
 
 // Check for updates when the Check for Updates button is pressed
@@ -1858,12 +2107,14 @@ function checkForAppUpdates() {
   console.log('%c[index.js, checkForAppUpdates]', 'color: green;', 'Checking for new application updates...');
   snackbarLog(t('Checking for available Moonlight updates...'));
   // Fetch the latest release data from the GitHub API
-  fetchLatestRelease().then(({ latestVersion, releaseNotes }) => {
+  fetchLatestRelease().then(({ latestVersion, releaseNotes, wgtUrl }) => {
     setTimeout(() => {
       // Check if a new version update is available
       if (checkVersionUpdate(appInfo.version, latestVersion)) {
         // Show the Update Moonlight dialog with new version and release notes to inform user to update the app
-        updateAppDialog(latestVersion, releaseNotes);
+        updateAppDialog(latestVersion, releaseNotes, wgtUrl);
+        // Create and display the Update App button at the top of the app so they can access it later if they close the dialog
+        updateAppButton(latestVersion);
       } else {
         // Otherwise, show a snackbar message to inform the user that the app is already up to date
         snackbarLogLong(t('Your app is already up to date! You\'re on the latest version.'));
@@ -1900,6 +2151,8 @@ function checkForAppUpdatesAtStartup() {
             updateAppButton(latestVersion);
           }
         }, 100);
+        // Save the fetched version
+        storeData(UPDATE_VERSION, latestVersion);
       }).catch(error => {
         console.error('%c[index.js, checkForAppUpdatesAtStartup]', 'color: green;', 'Error: Failed to fetch the release data!', error);
         snackbarLogLong(t('Cannot automatically check for updates at this time!'));
@@ -1917,6 +2170,17 @@ function checkForAppUpdatesAtStartup() {
         'Auto-update check skipped as the last one was within the past 24 hours. ' + 
         `Next auto-check will occur in ${hoursLeft} hour${hoursLeft !== 1 ? 's' : ''} and ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`
       );
+
+      // Still show the update button if a newer version was previously cached
+      getData(UPDATE_VERSION, function(vResult) {
+        var cachedVersion = vResult[UPDATE_VERSION];
+        if (cachedVersion !== undefined && checkVersionUpdate(appInfo.version, cachedVersion)) {
+          setTimeout(() => {
+            snackbarLogLong(t('Version %1$s is now available! Check out the latest features & improvements.', cachedVersion));
+            updateAppButton(cachedVersion);
+          }, 100);
+        }
+      });
     }
   });
 }
@@ -3679,6 +3943,20 @@ function initSpecialKeys() {
       }));
     }
   });
+}
+
+// Check if the currently installed app is the ForceGM variant
+function checkForceGMVariant() {
+  try {
+    var metaData = tizen.application.getAppMetaData(appInfo.id);
+    if (metaData && metaData.some(m => m.key === 'http://samsung.com/tv/metadata/use.game.mode' && m.value === 'true')) {
+      appInfo.name += '-ForceGM';
+      return true;
+    }
+  } catch (e) {
+    console.warn('%c[index.js, init]', 'color: green;', 'Failed to probe AppMetaData for ForceGM check:', e);
+  }
+  return false;
 }
 
 function loadSystemInfo() {

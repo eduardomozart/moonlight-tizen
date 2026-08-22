@@ -527,6 +527,7 @@
     <div id="performance-stats"></div>
   </div>
   <script defer src="static/js/jquery-2.2.0.min.js"></script>
+  <script defer src="static/js/jszip.min.js"></script>
   <script defer src="static/js/material.min.js"></script>
   <script type="text/javascript" src="$WEBAPIS/webapis/webapis.js"></script>
   <script type="text/javascript" src="platform/messages.js"></script>
@@ -770,6 +771,22 @@
         <button type="button" id="continueExitApp" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" data-i18n="Exit">Exit</button>
       </div>
     </dialog>
+  </div>
+  <div id="updateAppDialogOverlay" class="dialog-overlay">
+    <dialog id="updateAppDialog" class="mdl-dialog">
+      <h3 id="updateAppDialogTitle" class="mdl-dialog__title" data-i18n="Update Moonlight">Update Moonlight</h3>
+      <div class="mdl-dialog__content">
+        <p id="updateAppDialogText" class="update-app-text"></p>
+      </div>
+      <div class="mdl-dialog__actions">
+        <button type="button" id="updateNowAppBtn" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" data-i18n="Update Now">Update Now</button>
+        <button type="button" id="closeUpdateApp" autofocus class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored mdl-js-ripple-effect" data-i18n="Close">Close</button>
+      </div>
+    </dialog>
+  </div>
+  <div id="snackbarInfo" class="mdl-js-snackbar mdl-snackbar">
+    <div class="mdl-snackbar__text"></div>
+    <button class="mdl-snackbar__action" type="button"></button>
   </div>
   <div id="snackbar" class="mdl-snackbar mdl-js-snackbar">
     <div class="mdl-snackbar__text"></div>

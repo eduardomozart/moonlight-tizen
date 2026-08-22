@@ -407,7 +407,7 @@ body {
 #closeHostMenu, #closeHostDetails, #cancelDeleteHost, #closeAppSupport,
 #closeNavGuide, #closeUpdateApp, #continueRestoreDefaults, #cancelRestoreDefaults,
 #continueQuitApp, #cancelQuitApp, #closeWarning, #continueRestartApp,
-#cancelRestartApp, #continueExitApp, #cancelExitApp {
+#cancelRestartApp, #continueExitApp, #cancelExitApp, #updateNowAppBtn {
     text-transform: uppercase;
 }
 #continueAddHost, #cancelAddHost, #continueDeleteHost, #cancelDeleteHost,
@@ -420,7 +420,7 @@ body {
 }
 #cancelAddHost, #cancelPairing, #cancelDeleteHost, #closeAppSupport,
 #cancelRestoreDefaults, #cancelQuitApp, #closeWarning, #cancelRestartApp,
-#cancelExitApp {
+#cancelExitApp, #cancelAutoWol, #updateNowAppBtn, #closeUpdateApp {
     height: 40px;
     margin: 0 10px 20px 0;
     font-size: 1.4rem;
@@ -1013,7 +1013,7 @@ body {
 #continueAddHost:hover, #continueAddHost:focus, #cancelAddHost:hover, #cancelAddHost:focus, #cancelPairing:hover, #cancelPairing:focus,
 #continueDeleteHost:hover, #continueDeleteHost:focus, #cancelDeleteHost:hover, #cancelDeleteHost:focus, #closeHostMenu:hover, #closeHostMenu:focus,
 #closeHostDetails:hover, #closeHostDetails:focus, #closeAppSupport:hover, #closeAppSupport:focus, #closeNavGuide:hover, #closeNavGuide:focus,
-#closeUpdateApp:hover, #closeUpdateApp:focus, #continueRestoreDefaults:hover, #continueRestoreDefaults:focus, #cancelRestoreDefaults:hover,
+#updateNowAppBtn:hover, #updateNowAppBtn:focus, #closeUpdateApp:hover, #closeUpdateApp:focus, #continueRestoreDefaults:hover, #continueRestoreDefaults:focus, #cancelRestoreDefaults:hover,
 #cancelRestoreDefaults:focus, #continueQuitApp:hover, #continueQuitApp:focus, #cancelQuitApp:hover, #cancelQuitApp:focus, #closeWarning:hover,
 #closeWarning:focus, #continueRestartApp:hover, #continueRestartApp:focus, #cancelRestartApp:hover, #cancelRestartApp:focus, #continueExitApp:hover,
 #continueExitApp:focus, #cancelExitApp:hover, #cancelExitApp:focus, #settingsBtn:hover, #settingsBtn:focus, #supportBtn:hover, #supportBtn:focus,

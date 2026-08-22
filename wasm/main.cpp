@@ -12,6 +12,7 @@ extern char* g_UniqueId;
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#include <emscripten/val.h>
 
 #include <openssl/evp.h>
 #include <openssl/rand.h>
@@ -19,6 +20,8 @@ extern char* g_UniqueId;
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#include "sdb.hpp"
 
 // Requests the Wasm module to connect to the specified server
 #define MSG_START_REQUEST "startRequest"
@@ -635,6 +638,15 @@ void wakeOnLan(int callbackId, std::string macAddress) {
   g_Instance->WakeOnLan(callbackId, macAddress);
 }
 
+void probeSdbConnection(int callbackId) {
+  g_Instance->ProbeSdbConnection(callbackId);
+}
+
+void triggerUpdate(int callbackId, std::string appId, emscripten::val buffer) {
+  std::vector<unsigned char> data = emscripten::vecFromJSArray<unsigned char>(buffer);
+  g_Instance->TriggerUpdate(callbackId, appId, data);
+}
+
 void PostToJs(std::string msg) {
   MAIN_THREAD_EM_ASM({
     const msg = UTF8ToString($0);
@@ -674,4 +686,81 @@ EMSCRIPTEN_BINDINGS(handle_message) {
   emscripten::function("stun", &stun);
   emscripten::function("pair", &pair);
   emscripten::function("wakeOnLan", &wakeOnLan);
+  emscripten::function("probeSdbConnection", &probeSdbConnection);
+  emscripten::function("triggerUpdate", &triggerUpdate);
+}
+
+void MoonlightInstance::ProbeSdbConnection(int callbackId) {
+  m_Dispatcher.post_job(std::bind(&MoonlightInstance::ProbeSdbConnection_private, this, callbackId), false);
+}
+
+void MoonlightInstance::ProbeSdbConnection_private(int callbackId) {
+  std::string error_msg;
+  int sock = connect_to_sdb(error_msg, 2);
+  if (sock < 0) {
+    PostPromiseMessage(callbackId, "reject", error_msg);
+    return;
+  }
+  close(sock);
+  PostPromiseMessage(callbackId, "resolve", "OK");
+}
+
+void MoonlightInstance::TriggerUpdate(int callbackId, std::string appId, std::vector<unsigned char> data) {
+  m_Dispatcher.post_job(std::bind(&MoonlightInstance::TriggerUpdate_private, this, callbackId, appId, data), false);
+}
+
+void MoonlightInstance::TriggerUpdate_private(int callbackId, std::string appId, std::vector<unsigned char> data_buf) {
+  std::string error_msg;
+  
+  int copy_sock = connect_to_sdb(error_msg, 60);
+  if (copy_sock < 0) {
+    PostPromiseMessage(callbackId, "reject", "Failed to connect for sync: " + error_msg);
+    return;
+  }
+
+  uint32_t local_id = 1;
+  std::string target_path = "/home/owner/share/tmp/sdk_tools/tmp/Moonlight.wgt";
+  
+  std::string sync_err = sync_push_file(copy_sock, local_id, data_buf, target_path);
+  if (!sync_err.empty()) {
+      close(copy_sock);
+      PostPromiseMessage(callbackId, "reject", "Failed to push update to Tizen system temp folder: " + sync_err);
+      return;
+  }
+  close(copy_sock);
+
+  int sock = connect_to_sdb(error_msg, 60);
+  if (sock < 0) {
+    PostPromiseMessage(callbackId, "reject", error_msg);
+    return;
+  }
+
+  std::string payload = "shell:0 vd_appinstall " + appId + " " + target_path;
+  payload.push_back('\0');
+  if (!send_adb_msg(sock, 0x4e45504f /*OPEN*/, local_id, 0, payload)) {
+      close(sock);
+      PostPromiseMessage(callbackId, "reject", "Failed to send OPEN command to SDB shell");
+      return;
+  }
+
+  adb_msg msg;
+  std::string out_payload;
+  std::string full_output;
+  while (read_adb_msg(sock, &msg, &out_payload)) {
+      if (msg.command == 0x45545257 /*WRTE*/) {
+          full_output += out_payload;
+          send_adb_msg(sock, 0x59414b4f /*OKAY*/, local_id, msg.arg0, "");
+      } else if (msg.command == 0x45534c43 /*CLSE*/) {
+          break;
+      }
+  }
+
+  close(sock);
+
+  if (full_output.empty()) {
+      PostPromiseMessage(callbackId, "reject", "Installation failed without providing an error log.");
+      return;
+  }
+
+  PostPromiseMessage(callbackId, "reject", full_output);
 }

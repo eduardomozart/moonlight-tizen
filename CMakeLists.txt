@@ -237,6 +237,7 @@ add_executable(moonlight-wasm
     wasm/http.cpp
     wasm/input.cpp
     wasm/main.cpp
+    wasm/sdb.cpp
     wasm/profiling.cpp
     wasm/wasmplayer.cpp
 )

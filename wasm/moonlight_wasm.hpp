@@ -106,6 +106,8 @@ class MoonlightInstance {
   void STUN(int callbackId);
   void Pair(int callbackId, std::string serverMajorVersion, std::string address, int httpPort, std::string randomNumber);
   void WakeOnLan(int callbackId, std::string macAddress);
+  void ProbeSdbConnection(int callbackId);
+  void TriggerUpdate(int callbackId, std::string appId, std::vector<unsigned char> data);
 
   virtual ~MoonlightInstance();
 
@@ -214,6 +216,8 @@ class MoonlightInstance {
   void OpenUrl_private(int callbackId, std::string url, std::string ppk, bool binaryResponse);
   void STUN_private(int callbackId);
   void Pair_private(int callbackId, std::string serverMajorVersion, std::string address, int httpPort, std::string randomNumber);
+  void ProbeSdbConnection_private(int callbackId);
+  void TriggerUpdate_private(int callbackId, std::string appId, std::vector<unsigned char> data);
 
   void LockMouse();
   void UnlockMouse();

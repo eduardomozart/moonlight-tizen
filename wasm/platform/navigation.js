@@ -1499,14 +1499,21 @@ const Views = {
     },
   },
   UpdateMoonlightDialog: {
-    view: new ListView(() => [
-      'closeUpdateApp'
-    ]),
+    view: new ListView(() => {
+      var arr = [];
+      if ($('#updateNowAppBtn').is(':visible')) {
+        arr.push('updateNowAppBtn');
+      }
+      arr.push('closeUpdateApp');
+      return arr;
+    }),
     up: function() {
-      blurElement('closeUpdateApp');
+      this.view.prev();
+      focusElement(this.view.current());
     },
     down: function() {
-      focusElement('closeUpdateApp');
+      this.view.next();
+      focusElement(this.view.current());
     },
     left: function() {},
     right: function() {},
@@ -1521,8 +1528,9 @@ const Views = {
       focusElement(this.view.current());
     },
     enter: function() {
+      this.view.index = Math.max(0, this.view.func().indexOf('closeUpdateApp'));
       mark(this.view.current());
-      setTimeout(() => focusElement(this.view.current()), 100);
+      focusElement(this.view.current());
     },
     leave: function() {
       unmark(this.view.current());

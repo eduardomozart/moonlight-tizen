@@ -27,6 +27,8 @@ const AsyncFunctions = {
   'pair': (...args) => Module.pair(...args),
   // macAddress
   'wakeOnLan': (...args) => Module.wakeOnLan(...args),
+  'probeSdbConnection': (...args) => Module.probeSdbConnection(...args),
+  'triggerUpdate': (...args) => Module.triggerUpdate(...args),
 };
 
 var callbacks = {}
@@ -55,10 +57,25 @@ function replaceKnownStageLabels(text) {
     'input stream establishment',
   ];
 
+  const translatedStageLabels = [
+    t('none'),
+    t('platform initialization'),
+    t('name resolution'),
+    t('audio stream initialization'),
+    t('RTSP handshake'),
+    t('control stream initialization'),
+    t('video stream initialization'),
+    t('input stream initialization'),
+    t('control stream establishment'),
+    t('video stream establishment'),
+    t('audio stream establishment'),
+    t('input stream establishment'),
+  ];
+
   let translated = text.replace(/\bStarting\b/g, t('Starting'));
-  stageLabels.forEach((label) => {
+  stageLabels.forEach((label, i) => {
     const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    translated = translated.replace(new RegExp(escapedLabel, 'gi'), t(label));
+    translated = translated.replace(new RegExp(escapedLabel, 'gi'), translatedStageLabels[i]);
   });
 
   return translated;
