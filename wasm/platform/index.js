@@ -4125,10 +4125,19 @@ function initSpecialKeys() {
     }
   });
 
+  // Check if the key event comes from the remote 'Play/Pause', 'Play' or 'Pause' key
+  // The remote 'Pause' key shares keyCode 19 with the keyboard 'Pause Break' key, so it is told apart by its key name,
+  // which lets 'Pause Break' still be sent to the host
+  function isStreamMenuKey(e) {
+    return e.keyCode === tvKey.KEY_PLAY_PAUSE ||
+      e.keyCode === tvKey.KEY_PLAY ||
+      (e.keyCode === tvKey.KEY_PAUSE && e.key === 'XF86AudioPause');
+  }
+
   // Listen for the 'Play/Pause', 'Play' or 'Pause' key before the streaming session does, so it is never sent to the host
   ['keydown', 'keyup'].forEach(function(eventType) {
     window.addEventListener(eventType, function(e) {
-      if ((e.keyCode === tvKey.KEY_PLAY_PAUSE || e.keyCode === tvKey.KEY_PAUSE || e.keyCode === tvKey.KEY_PLAY) && isInGame === true) {
+      if (isStreamMenuKey(e) && isInGame === true) {
         e.preventDefault();
         e.stopPropagation();
         // Open or close the Stream Menu when the key is pressed
